@@ -134,7 +134,7 @@ export default class BudgetFormModal extends Modal {
 		if (emptyObjects.length !== 0) {
 			new Notice(
 				"Please write something in " +
-					emptyObjects.map(([k, ]) => k).join(", ")
+					emptyObjects.map(([k]) => k).join(", ")
 			);
 			return false;
 		}

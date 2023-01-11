@@ -30,38 +30,34 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon(
-			"dollar-sign",
-			"Add/edit entry",
-			async () => {
-				if (
-					!this.settings.accountsFolderPath ||
-					!this.settings.tagsFolderPath ||
-					!this.settings.templateFilePath
-				) {
-					new Notice(
-						"Define 'Accounts Folder Path', 'Tags Folder Path' and 'Tags Folder Path' from settings"
-					);
-					return;
-				}
-				const { accounts, tags, entryTemplate } =
-					await this.getPluginSettings();
-				if (!accounts || !tags || !entryTemplate) {
-					new Notice(
-						"Could not find accounts folder, tags folder or template files!"
-					);
-					return;
-				}
-
-				new BudgetFormModal(
-					this.getInitialData(),
-					{ accounts, tags },
-					this.app,
-					this.createFile.bind(this)
-				).open();
+		this.addRibbonIcon("dollar-sign", "Add/edit entry", async () => {
+			if (
+				!this.settings.accountsFolderPath ||
+				!this.settings.tagsFolderPath ||
+				!this.settings.templateFilePath
+			) {
+				new Notice(
+					"Define 'Accounts Folder Path', 'Tags Folder Path' and 'Tags Folder Path' from settings"
+				);
+				return;
 			}
-		);
-// This adds a settings tab so the user can configure various aspects of the plugin
+			const { accounts, tags, entryTemplate } =
+				await this.getPluginSettings();
+			if (!accounts || !tags || !entryTemplate) {
+				new Notice(
+					"Could not find accounts folder, tags folder or template files!"
+				);
+				return;
+			}
+
+			new BudgetFormModal(
+				this.getInitialData(),
+				{ accounts, tags },
+				this.app,
+				this.createFile.bind(this)
+			).open();
+		});
+		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new BudgetFormSettingTab(this.app, this));
 	}
 
@@ -93,13 +89,9 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 				/{day}/g,
 				formData.date.getDate().toString().padStart(2, "0")
 			)
-			.replace(/{details}/g, formData.details.toLowerCase());
+			.replace(/{details}/g, formData.details.toLowerCase().trim());
 		try {
-			await createMarkdownFile(
-				fileName,
-				fileContent,
-				this.app.vault
-			);
+			await createMarkdownFile(fileName, fileContent, this.app.vault);
 			onSuccess();
 
 			const summaryFilePath = this.settings.summaryFilePath;
