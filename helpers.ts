@@ -87,6 +87,24 @@ export async function readFileContent(
 }
 
 /**
+ * Check to see if there is a file at this path
+ * @param filePath file path to check
+ * @param vault app vault
+ */
+export function isFile(filePath: string, vault: Vault) {
+	return vault.getAbstractFileByPath(filePath) instanceof TFile;
+}
+
+/**
+ * Check to see if there is a folder at this path
+ * @param folderPath folder path to check
+ * @param vault app vault
+ */
+export function isFolder(folderPath: string, vault: Vault) {
+	return vault.getAbstractFileByPath(folderPath) instanceof TFolder;
+}
+
+/**
  * Set the tab with the file to active or opens a new tab if the file is not present in the current tabs
  * @param filePath file path
  * @param workspace app workspace
