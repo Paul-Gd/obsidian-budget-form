@@ -30,35 +30,47 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon("dollar-sign", "Add/edit entry", async () => {
-			if (
-				!this.settings.accountsFolderPath ||
-				!this.settings.tagsFolderPath ||
-				!this.settings.templateFilePath
-			) {
-				new Notice(
-					"Define 'Accounts Folder Path', 'Tags Folder Path' and 'Tags Folder Path' from settings"
-				);
-				return;
-			}
-			const { accounts, tags, entryTemplate } =
-				await this.getPluginSettings();
-			if (!accounts || !tags || !entryTemplate) {
-				new Notice(
-					"Could not find accounts folder, tags folder or template files!"
-				);
-				return;
-			}
-
-			new BudgetFormModal(
-				this.getInitialData(),
-				{ accounts, tags },
-				this.app,
-				this.createFile.bind(this)
-			).open();
+		this.addRibbonIcon(
+			"dollar-sign",
+			"Add a new budget entry",
+			this.openBudgetFormModal.bind(this)
+		);
+		// This adds a simple command that can be triggered anywhere
+		this.addCommand({
+			id: "budget-form-modal",
+			name: "Add a new budget entry",
+			callback: this.openBudgetFormModal.bind(this),
 		});
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new BudgetFormSettingTab(this.app, this));
+	}
+
+	private async openBudgetFormModal() {
+		if (
+			!this.settings.accountsFolderPath ||
+			!this.settings.tagsFolderPath ||
+			!this.settings.templateFilePath
+		) {
+			new Notice(
+				"Define 'Accounts Folder Path', 'Tags Folder Path' and 'Tags Folder Path' from settings"
+			);
+			return;
+		}
+		const { accounts, tags, entryTemplate } =
+			await this.getPluginSettings();
+		if (!accounts || !tags || !entryTemplate) {
+			new Notice(
+				"Could not find accounts folder, tags folder or template files!"
+			);
+			return;
+		}
+
+		new BudgetFormModal(
+			this.getInitialData(),
+			{ accounts, tags },
+			this.app,
+			this.createFile.bind(this)
+		).open();
 	}
 
 	async createFile(formData: BudgetFormData, onSuccess: () => void) {
