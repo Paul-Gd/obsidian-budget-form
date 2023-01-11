@@ -5,13 +5,20 @@ form because I wanted to keep track of all my expenses and my current balance in
 
 ## Example
 
-You can also check the [example vault](./budget-form-example-vault) to try this plugin out.
+You can also check the [example vault](./budget-form-example-vault) (download `budget-form-example-vault.zip`
+from [the release page](https://github.com/Paul-Gd/obsidian-budget-form/releases)) to try this plugin out.
 
 Using [dataview plugin](https://blacksmithgu.github.io/obsidian-dataview/), all budget entries can be displayed along
 with the balance. Some filters can be added in order to reduce the number of entries displayed.
 
 ![form](./docs/photos/form.png)
 ![summary](./docs/photos/summary.png)
+
+## How to install
+
+Download the latest version (`budget-form-plugin.zip`)
+from [the release page](https://github.com/Paul-Gd/obsidian-budget-form/releases) and unzip it in the plugin folder (
+usually located at `/path-to-your-vault/.obsidian/plugins`).
 
 ## How to use
 
