@@ -138,6 +138,7 @@
   },
   "left-ribbon": {
     "hiddenItems": {
+      "obsidian-budget-form:Add a new budget entry": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
@@ -146,7 +147,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "738b550aafd3c25f",
+  "active": "8808e41f6ea733da",
   "lastOpenFiles": [
     "finance/budget/2023/01/04-01-2023-burger.md",
     "finance/budget/2023/summary.md",
