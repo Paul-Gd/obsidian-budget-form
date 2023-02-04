@@ -48,7 +48,7 @@ export async function createMarkdownFile(
 }
 
 /**
- * Exports an object with the file names and file path from a folder
+ * Exports an object with the file names and file path from a folder, sorted by file name
  * @param path file path
  * @param vault app vault
  */
@@ -61,6 +61,7 @@ export function loadFileLinksFromFolder(
 		return Object.fromEntries(
 			accounts.children
 				.filter((fileOrFolder) => fileOrFolder instanceof TFile)
+				.sort((a, b) => a.name.localeCompare(b.name))
 				.map((accountFile: TFile) => [
 					`[[${accountFile.path}]]`,
 					accountFile.basename,
