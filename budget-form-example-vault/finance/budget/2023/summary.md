@@ -139,22 +139,25 @@ if (!dv.current()) {
   const balance = Object.entries(ledgers)
     .map(([path, ledger]) => ({
       amount: ledger.balance,
-      categoryFile: dv.page(path),
+      account: dv.page(path),
     }))
     .filter(
       (e) =>
-        !filterAccountCategory ||
-        e.categoryFile.category === filterAccountCategory
+        !filterAccountCategory || e.account.category === filterAccountCategory
     );
 
   // Display the table
   dv.table(
     ["Account", "Balance", "Category"],
-    balance.map(({ amount, categoryFile }) => [
-      categoryFile.file.link,
-      amount / 100,
-      categoryFile.category,
-    ])
+    balance
+      .sort(({ account: a }, { account: b }) =>
+        a.file.name.localeCompare(b.file.name)
+      )
+      .map(({ amount, account }) => [
+        account.file.link,
+        amount / 100,
+        account.category,
+      ])
   );
 }
 
