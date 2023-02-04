@@ -33,11 +33,11 @@ on a template where the fields (`{date}`, `{amount}` etc.) are replaced with the
 
 The following fields can be inserted:
 
-- date
-- from and to account
-- amount
-- tag
-- details
+-   date
+-   from and to account
+-   amount
+-   tag
+-   details
 
 ### Accounts
 
@@ -88,12 +88,12 @@ details:: bread
 ![settings](./docs/photos/settings.png)
 The following settings can be changed:
 
-* Accounts Folder Path - the path from where the `From account` and `To account` fields are populated
-* Tags Folder Path - the path from where the `Tag` field is populated
-* Template File Path - the path where the _**template**_ for the newly created file (budget entry) is located
-* Created Filename template - the path where the newly created file (budget entry) is located
-* Summary File Path - the path where the summary is located. Complete only if you want the summary to open after a new
-  entry was inserted
+-   Accounts Folder Path - the path from where the `From account` and `To account` fields are populated
+-   Tags Folder Path - the path from where the `Tag` field is populated
+-   Template File Path - the path where the _**template**_ for the newly created file (budget entry) is located
+-   Created Filename template - the path where the newly created file (budget entry) is located
+-   Summary File Path - the path where the summary is located. Complete only if you want the summary to open after a new
+    entry was inserted
 
 ## Summary
 

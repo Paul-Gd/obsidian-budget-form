@@ -3,7 +3,7 @@
 ## Filters
 
 month::
-tags:: 
+tags::
 excludeTags:: [[going out]]
 from::
 to::
