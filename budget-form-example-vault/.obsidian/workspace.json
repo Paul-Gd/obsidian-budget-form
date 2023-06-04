@@ -1,163 +1,163 @@
 {
-	"main": {
-		"id": "61c632e009bae75b",
-		"type": "split",
-		"children": [
-			{
-				"id": "7e7c0af488628573",
-				"type": "tabs",
-				"children": [
-					{
-						"id": "8808e41f6ea733da",
-						"type": "leaf",
-						"state": {
-							"type": "markdown",
-							"state": {
-								"file": "finance/budget/2023/summary.md",
-								"mode": "source",
-								"source": false
-							}
-						}
-					}
-				]
-			}
-		],
-		"direction": "vertical"
-	},
-	"left": {
-		"id": "3a25562ff8efd947",
-		"type": "split",
-		"children": [
-			{
-				"id": "d3ead7c88710fe4b",
-				"type": "tabs",
-				"children": [
-					{
-						"id": "738b550aafd3c25f",
-						"type": "leaf",
-						"state": {
-							"type": "file-explorer",
-							"state": {
-								"sortOrder": "alphabetical"
-							}
-						}
-					},
-					{
-						"id": "744dfb4f4437d349",
-						"type": "leaf",
-						"state": {
-							"type": "search",
-							"state": {
-								"query": "",
-								"matchingCase": false,
-								"explainSearch": false,
-								"collapseAll": false,
-								"extraContext": false,
-								"sortOrder": "alphabetical"
-							}
-						}
-					},
-					{
-						"id": "66b7291ed70b519f",
-						"type": "leaf",
-						"state": {
-							"type": "starred",
-							"state": {}
-						}
-					}
-				]
-			}
-		],
-		"direction": "horizontal",
-		"width": 296.5
-	},
-	"right": {
-		"id": "1c5c0b77236b2c9d",
-		"type": "split",
-		"children": [
-			{
-				"id": "cfdd054591d876ba",
-				"type": "tabs",
-				"children": [
-					{
-						"id": "c7fb802057b10dbf",
-						"type": "leaf",
-						"state": {
-							"type": "backlink",
-							"state": {
-								"file": "finance/budget/2023/summary.md",
-								"collapseAll": false,
-								"extraContext": false,
-								"sortOrder": "alphabetical",
-								"showSearch": false,
-								"searchQuery": "",
-								"backlinkCollapsed": false,
-								"unlinkedCollapsed": true
-							}
-						}
-					},
-					{
-						"id": "85d02d30e27d8155",
-						"type": "leaf",
-						"state": {
-							"type": "outgoing-link",
-							"state": {
-								"file": "finance/budget/2023/summary.md",
-								"linksCollapsed": false,
-								"unlinkedCollapsed": true
-							}
-						}
-					},
-					{
-						"id": "70407faa8d6a8bc0",
-						"type": "leaf",
-						"state": {
-							"type": "tag",
-							"state": {
-								"sortOrder": "frequency",
-								"useHierarchy": true
-							}
-						}
-					},
-					{
-						"id": "0be851af85a706f4",
-						"type": "leaf",
-						"state": {
-							"type": "outline",
-							"state": {
-								"file": "finance/budget/2023/summary.md"
-							}
-						}
-					}
-				]
-			}
-		],
-		"direction": "horizontal",
-		"width": 300,
-		"collapsed": true
-	},
-	"left-ribbon": {
-		"hiddenItems": {
-			"obsidian-budget-form:Add a new budget entry": false,
-			"switcher:Open quick switcher": false,
-			"graph:Open graph view": false,
-			"canvas:Create new canvas": false,
-			"daily-notes:Open today's daily note": false,
-			"templates:Insert template": false,
-			"command-palette:Open command palette": false
-		}
-	},
-	"active": "8808e41f6ea733da",
-	"lastOpenFiles": [
-		"finance/budget/accounts/cash.md",
-		"finance/budget/2023/summary.md",
-		"finance/budget/2023/01/04-01-2023-burger.md",
-		"finance/budget/tags/groceries.md",
-		"finance/budget/accounts/savings.md",
-		"finance/budget/accounts/work payments.md",
-		"finance/budget/accounts/main account.md",
-		"finance/budget/template/budget entry.md",
-		"finance/budget/2023/01/02-01-2023-salary january.md",
-		"finance/budget/tags/going out.md"
-	]
+  "main": {
+    "id": "61c632e009bae75b",
+    "type": "split",
+    "children": [
+      {
+        "id": "7e7c0af488628573",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8808e41f6ea733da",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "finance/budget/2023/summary.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3a25562ff8efd947",
+    "type": "split",
+    "children": [
+      {
+        "id": "d3ead7c88710fe4b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "738b550aafd3c25f",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "744dfb4f4437d349",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "e75e0075c8b163b2",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 291.5
+  },
+  "right": {
+    "id": "1c5c0b77236b2c9d",
+    "type": "split",
+    "children": [
+      {
+        "id": "cfdd054591d876ba",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c7fb802057b10dbf",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "finance/budget/2023/summary.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "85d02d30e27d8155",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "finance/budget/2023/summary.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "70407faa8d6a8bc0",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "0be851af85a706f4",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "finance/budget/2023/summary.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "obsidian-budget-form:Add a new budget entry": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "8808e41f6ea733da",
+  "lastOpenFiles": [
+    "finance/budget/2023/summary.md",
+    "finance/budget/accounts/cash.md",
+    "finance/budget/2023/01/04-01-2023-burger.md",
+    "finance/budget/tags/groceries.md",
+    "finance/budget/accounts/savings.md",
+    "finance/budget/accounts/work payments.md",
+    "finance/budget/accounts/main account.md",
+    "finance/budget/template/budget entry.md",
+    "finance/budget/2023/01/02-01-2023-salary january.md",
+    "finance/budget/tags/going out.md"
+  ]
 }

@@ -1,10 +1,9 @@
 # All entries
 
 ## Filters
-
 month::
 tags::
-excludeTags:: [[going out]]
+excludeTags::
 from::
 to::
 onlyExternals::
@@ -69,7 +68,7 @@ if (!dv.current()) {
   // Compute totals
   const totalAmount = filteredPages["amount"]
     .array()
-    .reduce((acc, b) => acc + b, 0)
+    .reduce((acc, amount) => acc + amount, 0)
     .toFixed(2);
   // Display the table
   dv.table(
@@ -84,6 +83,24 @@ if (!dv.current()) {
         p["to account"],
       ])
       .concat(dv.array([["Total", "---", totalAmount]]))
+  );
+  // Display the table by tag
+  dv.el("details", dv.el("summary", "Show breakdown by tags")).appendChild(
+    dv.span(
+      dv.markdownTable(
+        ["Tag", "Amount"],
+        Object.entries(
+          filteredPages.array().reduce((acc, p) => {
+            acc[p.tag] = acc[p.tag]
+              ? acc[p.tag] + Math.round(p.amount * 100)
+              : Math.round(p.amount * 100);
+            return acc;
+          }, {})
+        )
+          .map(([tag, amount]) => [tag, (amount / 100).toFixed(2)])
+          .concat(dv.array(["Total", totalAmount]))
+      )
+    )
   );
 }
 
@@ -103,7 +120,7 @@ if (!dv.current()) {
 
   const ledgers = pages.array().reduce((acc, p) => {
     //js does not know precise math so converting to  int should do the trick for simple stuff
-    const amount = p.amount * 100;
+    const amount = Math.round(p.amount * 100);
     const fromAccount = p["from account"].path;
     const toAccount = p["to account"].path;
 
@@ -155,7 +172,7 @@ if (!dv.current()) {
       )
       .map(({ amount, account }) => [
         account.file.link,
-        amount / 100,
+        (amount / 100).toFixed(2),
         account.category,
       ])
   );
