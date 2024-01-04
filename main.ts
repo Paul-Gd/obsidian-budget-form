@@ -1,4 +1,8 @@
-import { Notice, Plugin } from "obsidian";
+import {
+	Notice,
+	ObsidianProtocolData,
+	Plugin,
+} from "obsidian";
 import BudgetFormModal, { BudgetFormData } from "./BudgetFormModal";
 import {
 	createMarkdownFile,
@@ -15,7 +19,7 @@ import {
 export default class SimpleBudgetFormPlugin extends Plugin {
 	settings: BudgetFormPluginPluginSettings;
 
-	getInitialData(): BudgetFormData {
+	getInitialDefaultData(): BudgetFormData {
 		return {
 			date: new Date(),
 			amount: 0,
@@ -43,9 +47,37 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		});
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new BudgetFormSettingTab(this.app, this));
+		// This adds handler for obsidian urls
+		// Example obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out
+		this.registerObsidianProtocolHandler(
+			"budgetForm/openBudgetFormData",
+			this.handleObsidianProtocolOpenBudgetForm.bind(this)
+		);
 	}
 
-	private async openBudgetFormModal() {
+	private handleObsidianProtocolOpenBudgetForm(data: ObsidianProtocolData) {
+		console.log("opening link", data);
+		const formData: BudgetFormData = this.getInitialDefaultData();
+		if (!isNaN(parseFloat(data.amount))) {
+			formData.amount = parseFloat(data.amount);
+		}
+		if ("details" in data) {
+			formData.details = data.details;
+		}
+		if ("fromAccount" in data) {
+			formData.fromAccount = data.fromAccount;
+		}
+		if ("toAccount" in data) {
+			formData.toAccount = data.toAccount;
+		}
+		if ("tag" in data) {
+			formData.tag = data.tag;
+		}
+
+		this.openBudgetFormModal(formData).then();
+	}
+
+	private async openBudgetFormModal(partialInitialData?: BudgetFormData) {
 		if (
 			!this.settings.accountsFolderPath ||
 			!this.settings.tagsFolderPath ||
@@ -64,16 +96,50 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			);
 			return;
 		}
+		const initialData = this.getInitialData(
+			partialInitialData,
+			accounts,
+			tags
+		);
 
 		new BudgetFormModal(
-			this.getInitialData(),
+			initialData,
 			{ accounts, tags },
 			this.app,
 			this.createFile.bind(this)
 		).open();
 	}
 
-	async createFile(formData: BudgetFormData, onSuccess: () => void) {
+	private getInitialData(
+		partialInitialData: BudgetFormData | undefined,
+		accounts: { [p: string]: string },
+		tags: { [p: string]: string }
+	): BudgetFormData {
+		const initialData: BudgetFormData = {
+			...this.getInitialDefaultData(),
+			...partialInitialData,
+		};
+
+		if (initialData.toAccount) {
+			initialData.toAccount = (Object.entries(accounts).find(
+				([, value]) => value === initialData.toAccount
+			) || [initialData.toAccount])[0];
+		}
+		if (initialData.fromAccount) {
+			initialData.fromAccount = (Object.entries(accounts).find(
+				([, value]) => value === initialData.fromAccount
+			) || [initialData.fromAccount])[0];
+		}
+
+		if (initialData.tag) {
+			initialData.tag = (Object.entries(tags).find(
+				([, value]) => value === initialData.tag
+			) || [initialData.tag])[0];
+		}
+		return initialData;
+	}
+
+	private async createFile(formData: BudgetFormData, onSuccess: () => void) {
 		const createdFileTemplate = await readFileContent(
 			this.settings.templateFilePath,
 			this.app.vault

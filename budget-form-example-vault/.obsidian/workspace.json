@@ -13,13 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "finance/budget/2023/summary.md",
+                "file": "finance/budget/2023/01/04-01-2023-burger.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "461bcc09fb3481a4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "finance/budget/summary.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -85,7 +98,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "finance/budget/2023/summary.md",
+                "file": "finance/budget/summary.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +115,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "finance/budget/2023/summary.md",
+                "file": "finance/budget/summary.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +138,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "finance/budget/2023/summary.md"
+                "file": "finance/budget/summary.md"
               }
             }
           }
@@ -147,14 +160,19 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "8808e41f6ea733da",
+  "active": "738b550aafd3c25f",
   "lastOpenFiles": [
-    "finance/budget/2023/01/04-01-2023-cash from atm.md",
-    "finance/budget/2023/summary.md",
-    "finance/budget/template/budget entry.md",
-    "finance/budget/2023/01/02-01-2023-salary january.md",
-    "finance/budget/accounts/cash.md",
+    "finance/budget/2024/01/04-01-2024-something.md",
+    "finance/budget/summary.md",
+    "finance/budget/2024/01/04-01-2024-emag.md",
     "finance/budget/2023/01/04-01-2023-burger.md",
+    "finance/budget/2024/01",
+    "finance/budget/2024",
+    "finance/budget/2023/01/03-01-2023-bread.md",
+    "finance/budget/2023/01/02-01-2023-salary january.md",
+    "finance/budget/2023/01/04-01-2023-cash from atm.md",
+    "finance/budget/template/budget entry.md",
+    "finance/budget/accounts/cash.md",
     "finance/budget/tags/groceries.md",
     "finance/budget/accounts/savings.md",
     "finance/budget/accounts/work payments.md",

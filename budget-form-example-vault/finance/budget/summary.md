@@ -1,6 +1,7 @@
 # All entries
 
 ## Filters
+
 month::
 tags::
 excludeTags::
@@ -14,8 +15,8 @@ if (!dv.current()) {
   dv.header(6, "Dataview is not loaded yet!");
 } else {
   const pages = dv
-    .pages('"finance/budget/2023"')
-    .filter((p) => p.file.path.match(/finance\/budget\/2023\/\d+\//));
+    .pages('"finance/budget"')
+    .filter((p) => p.file.path.match(/finance\/budget\/\d+\/\d+\//));
 
   // FILTERS
   const filterMonth = dv.current().month;
@@ -36,7 +37,7 @@ if (!dv.current()) {
       : parseInt(dv.current().limitEntries);
 
   // Logs
-  // console.log("pages", pages.values;
+  // console.log("pages", pages.values);
   // console.log("filterMonth", filterMonth;
   // console.log("filterTags", rawFilterTags);
   // console.log("filterExcludeTags", filterExcludeTags);
@@ -115,8 +116,8 @@ if (!dv.current()) {
   dv.header(6, "Dataview is not loaded yet!");
 } else {
   const pages = dv
-    .pages('"finance/budget/2023"')
-    .filter((p) => p.file.path.match(/finance\/budget\/2023\/\d+\//));
+    .pages('"finance/budget"')
+    .filter((p) => p.file.path.match(/finance\/budget\/\d+\/\d+\//));
 
   const ledgers = pages.array().reduce((acc, p) => {
     //js does not know precise math so converting to  int should do the trick for simple stuff
