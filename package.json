@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-budget-form",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Form that adds a budget entry",
 	"main": "main.js",
 	"scripts": {

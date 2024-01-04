@@ -6,7 +6,7 @@ tags::
 excludeTags::
 from::
 to::
-onlyExternals::
+onlyExternals:: x
 limitEntries::
 
 ```dataviewjs
