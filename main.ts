@@ -5,10 +5,13 @@ import {
 } from "obsidian";
 import BudgetFormModal, { BudgetFormData } from "./BudgetFormModal";
 import {
-	createMarkdownFile,
-	focusOrOpenFileInEditor,
+	createMarkdownFile, // This can be removed as it's no longer needed
+	focusOrOpenFileInEditor, 
 	loadFileLinksFromFolder,
 	readFileContent,
+	initializeJsonFile,
+	getAllBudgetEntries,
+	saveAllBudgetEntries,
 } from "./helpers";
 import {
 	BudgetFormPluginPluginSettings,
@@ -32,6 +35,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		await initializeJsonFile(this.settings.jsonFilePath, this.app.vault);
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon(
@@ -81,10 +85,11 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		if (
 			!this.settings.accountsFolderPath ||
 			!this.settings.tagsFolderPath ||
-			!this.settings.templateFilePath
+			!this.settings.templateFilePath ||
+			!this.settings.jsonFilePath
 		) {
 			new Notice(
-				"Define 'Accounts Folder Path', 'Tags Folder Path' and 'Tags Folder Path' from settings"
+				"Define 'Accounts Folder Path', 'Tags Folder Path', 'Template File Path', and 'JSON File Path' from settings"
 			);
 			return;
 		}
@@ -92,7 +97,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			await this.getPluginSettings();
 		if (!accounts || !tags || !entryTemplate) {
 			new Notice(
-				"Could not find accounts folder, tags folder or template files!"
+				"Could not find accounts folder, tags folder, or template file!"
 			);
 			return;
 		}
@@ -106,7 +111,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			initialData,
 			{ accounts, tags },
 			this.app,
-			this.createFile.bind(this)
+			this.saveEntryToJson.bind(this)
 		).open();
 	}
 
@@ -139,37 +144,19 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		return initialData;
 	}
 
-	private async createFile(formData: BudgetFormData, onSuccess: () => void) {
-		const createdFileTemplate = await readFileContent(
-			this.settings.templateFilePath,
-			this.app.vault
-		);
-		if (!createdFileTemplate) {
-			new Notice("Could not read file template!");
-			return;
-		}
-		const createdFilePathTemplate = this.settings.createdFilePathTemplate;
-		const processedFormData = {
-			...formData,
-			date: formData.date.toISOString(),
-		};
-		const fileContent = Object.entries(processedFormData).reduce(
-			(acc, [k, v]) => acc.replace(`{${k}}`, v.toString()),
-			createdFileTemplate
-		);
-		const fileName = createdFilePathTemplate
-			.replace(/{year}/g, formData.date.getFullYear().toString())
-			.replace(
-				/{month}/g,
-				(formData.date.getMonth() + 1).toString().padStart(2, "0")
-			)
-			.replace(
-				/{day}/g,
-				formData.date.getDate().toString().padStart(2, "0")
-			)
-			.replace(/{details}/g, formData.details.toLowerCase().trim());
+	private async saveEntryToJson(formData: BudgetFormData, onSuccess: () => void) {
 		try {
-			await createMarkdownFile(fileName, fileContent, this.app.vault);
+			const entries = await getAllBudgetEntries(this.settings.jsonFilePath, this.app.vault);
+			const newEntry = {
+				date: formData.date.toISOString(),
+				fromAccount: formData.fromAccount,
+				toAccount: formData.toAccount,
+				amount: formData.amount,
+				tag: formData.tag,
+				details: formData.details.toLowerCase().trim(),
+			};
+			entries.push(newEntry);
+			await saveAllBudgetEntries(this.settings.jsonFilePath, entries, this.app.vault);
 			onSuccess();
 
 			const summaryFilePath = this.settings.summaryFilePath;
@@ -201,7 +188,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 	}
 
 	onunload() {}
-
+	
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},

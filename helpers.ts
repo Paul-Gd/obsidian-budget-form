@@ -6,45 +6,44 @@ import {
 	Workspace,
 	WorkspaceLeaf,
 } from "obsidian";
+import { BudgetFormData } from "./BudgetFormModal";
 
 /**
- * Creates the specified markdown file along with the folder required. If file exists, attempts
- * to create a new unique file by appending a number from 0 to attempts to the end of the file.
- * @param filePath file path of the file to be created
- * @param fileContent content of the file to be created
- * @param vault app vault
- * @param attempts how many times to attempt to create a unique file
+ * Initializes the JSON file if it doesn't exist.
+ * @param filePath Path to the JSON file.
+ * @param vault App vault.
  */
-export async function createMarkdownFile(
-	filePath: string,
-	fileContent: any,
-	vault: Vault,
-	attempts: number = 10
-): Promise<TFile> {
-	const folderNameMatch = filePath.match(/.*\//);
-	if (!folderNameMatch) {
-		throw new Error(`Could not extract folder from "${folderNameMatch}"`);
+export async function initializeJsonFile(filePath: string, vault: Vault): Promise<void> {
+	const file = vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) {
+		await vault.create(filePath, JSON.stringify([]));
 	}
-	let abstractFileByPath = vault.getAbstractFileByPath(
-		folderNameMatch[0].slice(0, -1)
-	);
-	if (!abstractFileByPath) {
-		await vault.createFolder(folderNameMatch[0]);
+}
+
+/**
+ * Retrieves all budget entries from the JSON file.
+ * @param filePath Path to the JSON file.
+ * @param vault App vault.
+ */
+export async function getAllBudgetEntries(filePath: string, vault: Vault): Promise<BudgetFormData[]> {
+	const content = await readFileContent(filePath, vault);
+	return content ? JSON.parse(content) : [];
+}
+
+/**
+ * Saves all budget entries to the JSON file.
+ * @param filePath Path to the JSON file.
+ * @param entries Array of budget entries.
+ * @param vault App vault.
+ */
+export async function saveAllBudgetEntries(filePath: string, entries: BudgetFormData[], vault: Vault): Promise<void> {
+	const jsonContent = JSON.stringify(entries, null, 2);
+	const file = vault.getAbstractFileByPath(filePath);
+	if (file instanceof TFile) {
+		await vault.modify(file, jsonContent);
+	} else {
+		await vault.create(filePath, jsonContent);
 	}
-	let createdFile: TFile | null = null;
-	for (let i = 0; i < attempts; i++) {
-		const formattedFileName =
-			(i ? filePath + i.toString() : filePath) + ".md";
-		const file = vault.getAbstractFileByPath(formattedFileName);
-		if (file === null) {
-			createdFile = await vault.create(formattedFileName, fileContent);
-			break;
-		}
-	}
-	if (!createdFile) {
-		throw new Error(`Could not create file! Attempted ${attempts} times`);
-	}
-	return createdFile;
 }
 
 /**
@@ -56,15 +55,15 @@ export function loadFileLinksFromFolder(
 	path: string,
 	vault: Vault
 ): { [path: string]: string } | null {
-	const accounts = vault.getAbstractFileByPath(path);
-	if (accounts instanceof TFolder) {
+	const folder = vault.getAbstractFileByPath(path);
+	if (folder instanceof TFolder) {
 		return Object.fromEntries(
-			accounts.children
+			folder.children
 				.filter((fileOrFolder) => fileOrFolder instanceof TFile)
 				.sort((a, b) => a.name.localeCompare(b.name))
-				.map((accountFile: TFile) => [
-					`[[${accountFile.path}]]`,
-					accountFile.basename,
+				.map((file: TFile) => [
+					`[[${file.path}]]`,
+					file.basename,
 				])
 		);
 	}
@@ -80,11 +79,11 @@ export async function readFileContent(
 	filePath: string,
 	vault: Vault
 ): Promise<string | null> {
-	const templateFile = vault.getAbstractFileByPath(filePath);
-	if (!(templateFile instanceof TFile)) {
+	const file = vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) {
 		return null;
 	}
-	return await vault.cachedRead(templateFile);
+	return await vault.cachedRead(file);
 }
 
 /**
@@ -92,7 +91,7 @@ export async function readFileContent(
  * @param filePath file path to check
  * @param vault app vault
  */
-export function isFile(filePath: string, vault: Vault) {
+export function isFile(filePath: string, vault: Vault): boolean {
 	return vault.getAbstractFileByPath(filePath) instanceof TFile;
 }
 
@@ -101,7 +100,7 @@ export function isFile(filePath: string, vault: Vault) {
  * @param folderPath folder path to check
  * @param vault app vault
  */
-export function isFolder(folderPath: string, vault: Vault) {
+export function isFolder(folderPath: string, vault: Vault): boolean {
 	return vault.getAbstractFileByPath(folderPath) instanceof TFolder;
 }
 
@@ -116,11 +115,12 @@ export async function focusOrOpenFileInEditor(
 	workspace: Workspace,
 	vault: Vault
 ) {
-	const markdownLeave = workspace
+	const markdownLeaf = workspace
 		.getLeavesOfType("markdown")
 		.find((leaf: WorkspaceLeaf) => leaf.view.getState().file === filePath);
-	if (markdownLeave) workspace.setActiveLeaf(markdownLeave);
-	else {
+	if (markdownLeaf) {
+		workspace.setActiveLeaf(markdownLeaf);
+	} else {
 		const file = vault.getAbstractFileByPath(filePath);
 		if (!(file instanceof TFile)) {
 			new Notice(

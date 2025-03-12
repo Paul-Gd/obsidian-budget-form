@@ -92,6 +92,7 @@ export default class BudgetFormModal extends Modal {
 					.createEl("input", {
 						type: "number",
 						value: this.input.amount.toString(),
+						step: "0.01",
 					})
 					.addEventListener("input", (ev: Event) => {
 						if (ev.target instanceof HTMLInputElement) {
@@ -130,16 +131,16 @@ export default class BudgetFormModal extends Modal {
 	}
 
 	private validateInputAndShowErrors(): boolean {
-		const emptyObjects = Object.entries(this.input).filter(([, v]) => !v);
-		if (emptyObjects.length !== 0) {
+		const emptyFields = Object.entries(this.input).filter(([, v]) => !v);
+		if (emptyFields.length !== 0) {
 			new Notice(
-				"Please write something in " +
-					emptyObjects.map(([k]) => k).join(", ")
+				"Please fill in the following fields: " +
+					emptyFields.map(([k]) => k).join(", ")
 			);
 			return false;
 		}
 		if (this.input.fromAccount === this.input.toAccount) {
-			new Notice("From and to account cannot be the same!");
+			new Notice("From and To accounts cannot be the same!");
 			return false;
 		}
 		return true;

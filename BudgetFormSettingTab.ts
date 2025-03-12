@@ -6,7 +6,7 @@ export interface BudgetFormPluginPluginSettings {
 	accountsFolderPath: string;
 	tagsFolderPath: string;
 	templateFilePath: string;
-	createdFilePathTemplate: string;
+	jsonFilePath: string;
 	summaryFilePath: string;
 }
 
@@ -14,8 +14,7 @@ export const DEFAULT_SETTINGS: BudgetFormPluginPluginSettings = {
 	accountsFolderPath: "finance/budget/accounts",
 	tagsFolderPath: "finance/budget/tags",
 	templateFilePath: "finance/budget/template/budget entry.md",
-	createdFilePathTemplate:
-		"finance/budget/{year}/{month}/{day}-{month}-{year}-{details}",
+	jsonFilePath: "finance/budget/budgetEntries.json",
 	summaryFilePath: "",
 };
 
@@ -32,12 +31,12 @@ export class BudgetFormSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Settings for my awesome plugin." });
+		containerEl.createEl("h2", { text: "Settings for Obsidian Budget Form Plugin." });
 
 		new Setting(containerEl)
 			.setName("Accounts Folder Path")
 			.setDesc(
-				"The files from this folder will be linked in the to and from account fields"
+				"The files from this folder will be linked in the From and To account fields"
 			)
 			.addText((text) =>
 				text
@@ -59,7 +58,7 @@ export class BudgetFormSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Tags Folder Path")
 			.setDesc(
-				"The files from this folder will be linked in the tag field"
+				"The files from this folder will be linked in the Tag field"
 			)
 			.addText((text) =>
 				text
@@ -101,21 +100,29 @@ export class BudgetFormSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Created Filename template")
-			.setDesc("The file path of the newly created form ")
+			.setName("JSON File Path")
+			.setDesc("The path where all budget entries will be stored in a single JSON file")
 			.addText((text) =>
 				text
-					.setValue(this.plugin.settings.createdFilePathTemplate)
+					.setValue(this.plugin.settings.jsonFilePath)
 					.onChange(async (value) => {
-						this.plugin.settings.createdFilePathTemplate = value;
+						this.plugin.settings.jsonFilePath = value;
 						await this.plugin.saveSettings();
+					})
+			)
+			.addButton((cb) =>
+				cb
+					.setButtonText("Test")
+					.setCta()
+					.onClick(() => {
+						this.isFile(this.plugin.settings.jsonFilePath);
 					})
 			);
 
 		new Setting(containerEl)
-			.setName("Summary File path")
+			.setName("Summary File Path")
 			.setDesc(
-				"If you want to display the summary after a new note is created, complete the summary path"
+				"If you want to display the summary after a new entry is created, provide the summary file path"
 			)
 			.addText((text) =>
 				text

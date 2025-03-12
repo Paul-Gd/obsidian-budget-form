@@ -1,14 +1,13 @@
 # Obsidian Budget Form
 
-This is a simple, **opinionated** plugin that helps you keep track of your budget and accounts balance. I created this
-form because I wanted to keep track of all my expenses and my current balance in Obsidian.
+This is a simple, **opinionated** plugin that helps you keep track of your budget and account balances by storing all budget entries in a single JSON file. I created this form because I wanted to efficiently manage all my expenses and current balance in Obsidian without slowing down the application.
 
 ## Example
 
 You can also check the [example vault](./budget-form-example-vault) (download `budget-form-example-vault.zip`
 from [the release page](https://github.com/Paul-Gd/obsidian-budget-form/releases)) to try this plugin out.
 
-Using [dataview plugin](https://blacksmithgu.github.io/obsidian-dataview/), all budget entries can be displayed along
+Using the [dataview plugin](https://blacksmithgu.github.io/obsidian-dataview/), all budget entries can be displayed along
 with the balance. Some filters can be added in order to reduce the number of entries displayed.
 
 ![form](./docs/photos/form.png)
@@ -28,10 +27,9 @@ called `Obsidian Budget Form: Add new budget entry`.
 
 ## Structure
 
-The budget is composed of multiple budget entries that are saved as an individual files. Those files are created based
-on a template where the fields (`{date}`, `{amount}` etc.) are replaced with the value from the form.
+All budget entries are now stored in a single JSON file. This approach improves performance by reducing the number of individual files Obsidian needs to manage.
 
-The following fields can be inserted:
+The JSON file contains multiple budget entries with the following fields:
 
 -   date
 -   from and to account
@@ -41,7 +39,7 @@ The following fields can be inserted:
 
 ### Accounts
 
-The files from accounts folder will be used in the `From account` and `To account` category. Accounts can have a
+The files from the accounts folder will be used in the `From account` and `To account` categories. Accounts can have a
 category.
 
 Example for [cash "account"](./budget-form-example-vault/finance/budget/accounts/cash.md):
@@ -52,35 +50,27 @@ category:: internal
 
 ### Tags
 
-The files from tags folder will be used in the `Tag` category.
+The files from the tags folder will be used in the `Tag` category.
 
 Example for [groceries tag](./budget-form-example-vault/finance/budget/tags/groceries.md)
 
-### File template
+### JSON File
 
-The template file will be used to create a new entry.
+The budget entries are stored in a single JSON file defined by the plugin settings.
 
-Example of [file template](./budget-form-example-vault/finance/budget/template/budget%20entry.md):
+Example of a budget entry in `budgetEntries.json`:
 
-```
-date:: {date}
-from account:: {fromAccount}
-to account:: {toAccount}
-amount:: {amount}
-tag:: {tag}
-details:: {details}
-```
-
-After completing the form and tapping on submit, an entry
-like [03-01-2023-bread.md](./budget-form-example-vault/finance/budget/2023/01/03-01-2023-bread.md) will be created:
-
-```
-date:: 2023-01-03T07:25:00.000Z
-from account:: [[finance/budget/accounts/main account.md]]
-to account:: [[finance/budget/accounts/expenses.md]]
-amount:: 10
-tag:: [[finance/budget/tags/groceries.md]]
-details:: bread
+```json
+[
+  {
+    "date": "2023-01-03T07:25:00.000Z",
+    "fromAccount": "[[finance/budget/accounts/main account.md]]",
+    "toAccount": "[[finance/budget/accounts/expenses.md]]",
+    "amount": 10,
+    "tag": "[[finance/budget/tags/groceries.md]]",
+    "details": "bread"
+  }
+]
 ```
 
 ## Plugin settings
@@ -90,14 +80,14 @@ The following settings can be changed:
 
 -   Accounts Folder Path - the path from where the `From account` and `To account` fields are populated
 -   Tags Folder Path - the path from where the `Tag` field is populated
--   Template File Path - the path where the _**template**_ for the newly created file (budget entry) is located
--   Created Filename template - the path where the newly created file (budget entry) is located
+-   Template File Path - the path where the **template** for the newly created entry is located
+-   JSON File Path - the path where all budget entries will be stored as a single JSON file
 -   Summary File Path - the path where the summary is located. Complete only if you want the summary to open after a new
     entry was inserted
 
 ## Obsidian URL
 
-This plugin can handle opening and populating data in the form by using url such as [obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out](obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out)
+This plugin can handle opening and populating data in the form by using URLs such as [obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out](obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out)
 
 ## Summary
 
