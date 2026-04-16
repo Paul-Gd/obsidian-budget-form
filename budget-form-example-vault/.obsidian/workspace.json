@@ -98,7 +98,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "finance/budget/summary.md",
+                "file": "finance/budget/2023/01/04-01-2023-burger.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -115,7 +115,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "finance/budget/summary.md",
+                "file": "finance/budget/2023/01/04-01-2023-burger.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -138,7 +138,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "finance/budget/summary.md"
+                "file": "finance/budget/2023/01/04-01-2023-burger.md"
               }
             }
           }
