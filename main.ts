@@ -5,8 +5,7 @@ import {
 } from "obsidian";
 import BudgetFormModal, { BudgetFormData } from "./BudgetFormModal";
 import {
-	createMarkdownFile, // This can be removed as it's no longer needed
-	focusOrOpenFileInEditor, 
+	focusOrOpenFileInEditor,
 	loadFileLinksFromFolder,
 	readFileContent,
 	initializeJsonFile,
@@ -18,6 +17,13 @@ import {
 	BudgetFormSettingTab,
 	DEFAULT_SETTINGS,
 } from "./BudgetFormSettingTab";
+import {
+	initHledger,
+	accounts,
+	balance,
+	print,
+	commodities,
+} from "./hledger-wasm";
 
 export default class SimpleBudgetFormPlugin extends Plugin {
 	settings: BudgetFormPluginPluginSettings;
@@ -35,7 +41,13 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		await initializeJsonFile(this.settings.jsonFilePath, this.app.vault);
+		try {
+			await initializeJsonFile(this.settings.jsonFilePath, this.app.vault);
+		} catch (e) {
+			// JSON file may already exist on disk — safe to ignore
+		}
+
+		this.initHledgerWasm();
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon(
@@ -155,7 +167,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 				tag: formData.tag,
 				details: formData.details.toLowerCase().trim(),
 			};
-			entries.push(newEntry);
+			// entries.push(newEntry);
 			await saveAllBudgetEntries(this.settings.jsonFilePath, entries, this.app.vault);
 			onSuccess();
 
@@ -187,8 +199,41 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		return { accounts, tags, entryTemplate };
 	}
 
+	private async initHledgerWasm() {
+		try {
+			await initHledger(this.app);
+
+			const demoJournal = `
+2023-01-01 opening balance  ; created:1672600010
+    assets:bank             RON1000
+    equity:opening-balances
+
+2023-01-15 groceries  ; created:1673800000
+    expenses:food        RON150
+    assets:bank
+
+2023-01-20 salary  ; created:1674200000
+    assets:bank          RON5000
+    income:work:salary
+`;
+			const [accs, bal, txns, coms] = await Promise.all([
+				accounts(demoJournal),
+				balance(demoJournal),
+				print(demoJournal),
+				commodities(demoJournal),
+			]);
+
+			console.log("hledger-wasm accounts:", accs);
+			console.log("hledger-wasm balance:", bal);
+			console.log("hledger-wasm print:", txns);
+			console.log("hledger-wasm commodities:", coms);
+		} catch (e) {
+			console.error("hledger-wasm init failed:", e);
+		}
+	}
+
 	onunload() {}
-	
+
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
