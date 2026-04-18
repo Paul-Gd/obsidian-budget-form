@@ -1,5 +1,5 @@
-# vscode
-.vscode 
+	# vscode
+.vscode
 
 # Intellij
 *.iml
@@ -12,6 +12,9 @@ node_modules
 # They should be uploaded to GitHub releases instead.
 main.js
 
+# WASM binary (copied from node_modules during build)
+hledger-wasm.wasm
+
 # Exclude sourcemaps
 *.map
 
@@ -21,3 +24,5 @@ data.json
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 .aider*
+/hledger-wasm/
+/hledger/
