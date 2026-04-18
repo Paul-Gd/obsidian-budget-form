@@ -20,6 +20,7 @@ const copyToExampleVault = {
 		build.onEnd(() => {
 			copyFileSync("main.js", `${exampleVaultPluginDir}/main.js`);
 			copyFileSync("manifest.json", `${exampleVaultPluginDir}/manifest.json`);
+			copyFileSync("styles.css", `${exampleVaultPluginDir}/styles.css`);
 			copyFileSync(
 				"node_modules/hledger-wasm/dist/hledger-wasm.wasm",
 				`${exampleVaultPluginDir}/hledger-wasm.wasm`

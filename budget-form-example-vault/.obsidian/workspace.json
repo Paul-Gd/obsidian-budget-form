@@ -11,14 +11,12 @@
             "id": "8808e41f6ea733da",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "journal-view",
               "state": {
-                "file": "finance/budget/summary.md",
-                "mode": "source",
-                "source": false
+                "file": "finance/demo.journal"
               },
               "icon": "lucide-file",
-              "title": "summary"
+              "title": "demo"
             }
           }
         ]
@@ -193,9 +191,10 @@
   },
   "active": "8808e41f6ea733da",
   "lastOpenFiles": [
+    "finance/budget/summary.md",
+    "finance/demo.journal",
     "finance/budget/2023/01/04-01-2023-burger.md",
     "hledger/main.journal",
-    "finance/budget/summary.md",
     "hledger",
     "finance/budget/2024/01/04-01-2024-something.md",
     "finance/budget/2024/01/04-01-2024-emag.md",

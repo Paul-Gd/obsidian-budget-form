@@ -1,0 +1,47 @@
+account assets:bank
+account assets:cash
+account assets:revolut
+account expenses:food
+account expenses:rent
+account expenses:utilities
+account income:work:salary
+account income:freelance
+account equity:opening-balances
+
+2025-01-01 opening balance  ; created:1704067200
+    assets:bank              RON10000
+    equity:opening-balances
+
+2025-01-05 groceries  ; created:1704412800
+    expenses:food            RON250.50
+    assets:bank
+
+2025-01-15 salary january  ; created:1705276800
+    assets:bank              RON7500
+    income:work:salary
+
+2025-01-20 electricity bill  ; created:1705708800
+    expenses:utilities       RON180
+    assets:bank
+
+2025-02-01 rent  ; created:1706745600
+    expenses:rent            RON2500
+    assets:bank
+
+2025-02-10 freelance payment  ; created:1707523200
+    assets:revolut           EUR500
+    income:freelance
+
+2025-02-15 salary february  ; created:1707955200
+    assets:bank              RON7500
+    income:work:salary
+
+2025-02-20 cash withdrawal  ; created:1708387200
+    assets:cash              RON500
+    assets:bank
+
+2025-03-01 groceries  ; created:1709251200
+    expenses:food            RON320
+    assets:cash
+
+

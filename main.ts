@@ -17,13 +17,8 @@ import {
 	BudgetFormSettingTab,
 	DEFAULT_SETTINGS,
 } from "./BudgetFormSettingTab";
-import {
-	initHledger,
-	accounts,
-	balance,
-	print,
-	commodities,
-} from "./hledger-wasm";
+import { initHledger } from "./hledger-wasm";
+import { JournalView, JOURNAL_VIEW_TYPE } from "./JournalView";
 
 export default class SimpleBudgetFormPlugin extends Plugin {
 	settings: BudgetFormPluginPluginSettings;
@@ -47,7 +42,9 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			// JSON file may already exist on disk — safe to ignore
 		}
 
-		this.initHledgerWasm();
+		await this.initHledgerWasm();
+		this.registerView(JOURNAL_VIEW_TYPE, (leaf) => new JournalView(leaf));
+		this.registerExtensions(["journal"], JOURNAL_VIEW_TYPE);
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon(
@@ -202,31 +199,6 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 	private async initHledgerWasm() {
 		try {
 			await initHledger(this.app);
-
-			const demoJournal = `
-2023-01-01 opening balance  ; created:1672600010
-    assets:bank             RON1000
-    equity:opening-balances
-
-2023-01-15 groceries  ; created:1673800000
-    expenses:food        RON150
-    assets:bank
-
-2023-01-20 salary  ; created:1674200000
-    assets:bank          RON5000
-    income:work:salary
-`;
-			const [accs, bal, txns, coms] = await Promise.all([
-				accounts(demoJournal),
-				balance(demoJournal),
-				print(demoJournal),
-				commodities(demoJournal),
-			]);
-
-			console.log("hledger-wasm accounts:", accs);
-			console.log("hledger-wasm balance:", bal);
-			console.log("hledger-wasm print:", txns);
-			console.log("hledger-wasm commodities:", coms);
 		} catch (e) {
 			console.error("hledger-wasm init failed:", e);
 		}

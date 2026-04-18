@@ -88,17 +88,17 @@ export default class BudgetFormModal extends Modal {
 
 		new Setting(contentEl).setName("Amount").addText((component) => {
 			if (component.inputEl.parentElement) {
-				component.inputEl.parentElement
+				const amountInput = component.inputEl.parentElement
 					.createEl("input", {
 						type: "number",
 						value: this.input.amount.toString(),
-						step: "0.01",
-					})
-					.addEventListener("input", (ev: Event) => {
-						if (ev.target instanceof HTMLInputElement) {
-							this.input.amount = parseFloat(ev.target.value);
-						}
 					});
+				amountInput.step = "0.01";
+				amountInput.addEventListener("input", (ev: Event) => {
+					if (ev.target instanceof HTMLInputElement) {
+						this.input.amount = parseFloat(ev.target.value);
+					}
+				});
 				component.inputEl.parentElement.removeChild(component.inputEl);
 			}
 		});
