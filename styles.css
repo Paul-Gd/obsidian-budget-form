@@ -51,3 +51,39 @@
     padding: 2em;
     color: var(--text-error);
 }
+
+/* Filter bar */
+.journal-filters {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 1.5em;
+}
+
+.journal-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.journal-filter label {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.journal-filter select {
+    padding: 4px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: var(--font-text-size);
+}
+
+/* Amount coloring */
+.journal-amount-positive {
+    color: var(--color-green);
+}
+
+.journal-amount-negative {
+    color: var(--color-red);
+}

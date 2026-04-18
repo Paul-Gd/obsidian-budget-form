@@ -113,9 +113,10 @@ export async function aregister(
 	journal: string,
 	account: string,
 	...args: string[]
-): Promise<string> {
+): Promise<HledgerTransaction[]> {
 	const raw = await runHledger(journal, "aregister", account, ...args);
-	return raw;
+	if (!raw) return [];
+	return JSON.parse(raw);
 }
 
 export async function commodities(journal: string): Promise<string[]> {
