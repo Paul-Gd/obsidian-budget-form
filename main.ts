@@ -12,6 +12,8 @@ const DEFAULT_CURRENCY = "RON";
 
 export default class SimpleBudgetFormPlugin extends Plugin {
 	settings: BudgetFormPluginSettings;
+	cachedAccounts: string[] = [];
+	cachedCommodities: string[] = [DEFAULT_CURRENCY];
 
 	async onload() {
 		await this.loadSettings();
@@ -83,16 +85,6 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			return;
 		}
 
-		const journalContent = await this.app.vault.read(journalFile);
-		const [accountList, commodityList] = await Promise.all([
-			accounts(journalContent),
-			commodities(journalContent),
-		]);
-
-		if (!commodityList.includes(DEFAULT_CURRENCY)) {
-			commodityList.unshift(DEFAULT_CURRENCY);
-		}
-
 		const initialData: BudgetFormData = {
 			date: new Date(),
 			fromAccount: "",
@@ -105,13 +97,44 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			...prefill,
 		};
 
-		new BudgetFormModal(
+		// Open form immediately with cached data
+		const modal = new BudgetFormModal(
 			initialData,
-			{ accounts: accountList, commodities: commodityList },
+			{ accounts: this.cachedAccounts, commodities: this.cachedCommodities },
 			this.app,
 			(formData, onSuccess) =>
 				this.appendTransaction(formData, journalFile, onSuccess)
-		).open();
+		);
+		modal.open();
+
+		// Refresh dropdowns in the background if cache is empty
+		if (this.cachedAccounts.length === 0) {
+			this.refreshCache(journalFile).then(() => modal.updateOptions({
+				accounts: this.cachedAccounts,
+				commodities: this.cachedCommodities,
+			}));
+		}
+	}
+
+	async refreshCache(journalFile?: TFile): Promise<void> {
+		if (!journalFile) {
+			const f = this.app.vault.getAbstractFileByPath(this.settings.journalFilePath);
+			if (!(f instanceof TFile)) return;
+			journalFile = f;
+		}
+
+		const journalContent = await this.app.vault.read(journalFile);
+		const [accountList, commodityList] = await Promise.all([
+			accounts(journalContent),
+			commodities(journalContent),
+		]);
+
+		if (!commodityList.includes(DEFAULT_CURRENCY)) {
+			commodityList.unshift(DEFAULT_CURRENCY);
+		}
+
+		this.cachedAccounts = accountList;
+		this.cachedCommodities = commodityList;
 	}
 
 	private async appendTransaction(

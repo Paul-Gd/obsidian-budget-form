@@ -1,4 +1,8 @@
 import { TextFileView, WorkspaceLeaf, setIcon } from "obsidian";
+
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
 import { EditorView, lineNumbers, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -170,53 +174,51 @@ export class JournalView extends TextFileView {
 	private async renderPreview(): Promise<void> {
 		const thisRender = ++this.renderVersion;
 		this.previewEl.empty();
-		this.previewEl.createDiv({ cls: "journal-loading", text: "Loading..." });
+
+		// Build skeleton immediately with cached accounts
+		const cachedAccountList = this.plugin.cachedAccounts;
+		this.buildFilterBar(this.previewEl, cachedAccountList);
+		let txnEl = this.previewEl.createDiv({ cls: "journal-loading", text: "Loading..." });
+		let balanceEl = this.previewEl.createDiv();
+		let assertionsEl = this.previewEl.createDiv();
+
+		// Yield so the browser paints the skeleton before WASM blocks the main thread
+		await sleep(0);
+		if (thisRender !== this.renderVersion) return;
+
+		const dateFilter: string[] = this.selectedMonth
+			? [`date:${this.selectedMonth}`]
+			: [];
 
 		try {
-			const accountList = await accounts(this.data);
+			// Fire accounts + transactions in parallel
+			const txnQuery = this.selectedAccount
+				? aregister(this.data, this.selectedAccount, ...dateFilter)
+				: print(this.data, ...dateFilter);
+			const accountsQuery = cachedAccountList.length > 0
+				? Promise.resolve(cachedAccountList)
+				: accounts(this.data);
+
+			const [txnResult, accountList] = await Promise.all([txnQuery, accountsQuery]);
 			if (thisRender !== this.renderVersion) return;
 
-			this.previewEl.empty();
-			this.buildFilterBar(this.previewEl, accountList);
-
-			const dateFilter: string[] = this.selectedMonth
-				? [`date:${this.selectedMonth}`]
-				: [];
-
-			if (this.selectedAccount) {
-				const allEntries = await aregister(
-					this.data,
-					this.selectedAccount,
-					...dateFilter
-				);
-				if (thisRender !== this.renderVersion) return;
-				const entries = this.selectedLimit
-					? allEntries.slice(0, this.selectedLimit)
-					: allEntries;
-				this.buildRegisterTable(
-					this.previewEl,
-					entries,
-					`${this.selectedAccount} (${entries.length} of ${allEntries.length})`
-				);
-			} else {
-				const allTxns = await print(this.data, ...dateFilter);
-				if (thisRender !== this.renderVersion) return;
-				const txns = this.selectedLimit
-					? allTxns.slice(-this.selectedLimit)
-					: allTxns;
-				this.buildTransactionsTable(
-					this.previewEl,
-					txns,
-					`Transactions (${txns.length} of ${allTxns.length})`
-				);
+			// Rebuild the page with fresh accounts if cache was empty
+			if (accountList !== cachedAccountList) {
+				this.plugin.cachedAccounts = accountList;
+				this.previewEl.empty();
+				this.buildFilterBar(this.previewEl, accountList);
+				txnEl = this.previewEl.createDiv();
+				balanceEl = this.previewEl.createDiv();
+				assertionsEl = this.previewEl.createDiv();
 			}
 
-			// Asset balances — always full history, not filtered by period
-			const assetBal = await balance(this.data, "assets");
-			if (thisRender !== this.renderVersion) return;
-			this.buildBalanceTable(this.previewEl, assetBal);
+			this.renderTransactions(txnEl, txnResult);
 
-			this.buildAssertionsToggle(this.previewEl, thisRender);
+			// Yield again so transactions are painted before balance query blocks
+			await sleep(0);
+			if (thisRender !== this.renderVersion) return;
+
+			await this.renderDeferredSections(thisRender, balanceEl, assertionsEl);
 		} catch (e) {
 			if (thisRender !== this.renderVersion) return;
 			this.previewEl.empty();
@@ -225,6 +227,46 @@ export class JournalView extends TextFileView {
 				text: e instanceof Error ? e.message : String(e),
 			});
 		}
+	}
+
+	private renderTransactions(
+		container: HTMLElement,
+		result: HledgerTransaction[] | HledgerRegisterEntry[]
+	): void {
+		container.empty();
+		container.removeClass("journal-loading");
+		if (this.selectedAccount) {
+			const allEntries = result as HledgerRegisterEntry[];
+			const entries = this.selectedLimit
+				? allEntries.slice(0, this.selectedLimit)
+				: allEntries;
+			this.buildRegisterTable(
+				container,
+				entries,
+				`${this.selectedAccount} (${entries.length} of ${allEntries.length})`
+			);
+		} else {
+			const allTxns = result as HledgerTransaction[];
+			const txns = this.selectedLimit
+				? allTxns.slice(-this.selectedLimit)
+				: allTxns;
+			this.buildTransactionsTable(
+				container,
+				txns,
+				`Transactions (${txns.length} of ${allTxns.length})`
+			);
+		}
+	}
+
+	private async renderDeferredSections(
+		thisRender: number,
+		balanceContainer: HTMLElement,
+		assertionsContainer: HTMLElement
+	): Promise<void> {
+		const assetBal = await balance(this.data, "assets");
+		if (thisRender !== this.renderVersion) return;
+		this.buildBalanceTable(balanceContainer, assetBal);
+		this.buildAssertionsToggle(assertionsContainer, thisRender);
 	}
 
 	private buildFilterBar(

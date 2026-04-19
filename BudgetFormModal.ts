@@ -20,6 +20,10 @@ export default class BudgetFormModal extends Modal {
 	private input: BudgetFormData;
 	private formOptions: FormOptions;
 	private onSubmit: (data: BudgetFormData, onSuccess: () => void) => void;
+	private fromAccountSelect: HTMLSelectElement | null = null;
+	private toAccountSelect: HTMLSelectElement | null = null;
+	private fromCurrencySelect: HTMLSelectElement | null = null;
+	private toCurrencySelect: HTMLSelectElement | null = null;
 
 	constructor(
 		initialData: BudgetFormData,
@@ -31,6 +35,28 @@ export default class BudgetFormModal extends Modal {
 		this.input = { ...initialData };
 		this.formOptions = formOptions;
 		this.onSubmit = onSubmit;
+	}
+
+	updateOptions(options: FormOptions): void {
+		this.formOptions = options;
+		this.repopulateSelect(this.fromAccountSelect, options.accounts, this.input.fromAccount);
+		this.repopulateSelect(this.toAccountSelect, options.accounts, this.input.toAccount);
+		this.repopulateSelect(this.fromCurrencySelect, options.commodities, this.input.fromCurrency);
+		this.repopulateSelect(this.toCurrencySelect, options.commodities, this.input.toCurrency);
+	}
+
+	private repopulateSelect(
+		select: HTMLSelectElement | null,
+		items: string[],
+		currentValue: string
+	): void {
+		if (!select) return;
+		select.empty();
+		select.createEl("option", { value: "", text: "" });
+		for (const item of items) {
+			select.createEl("option", { value: item, text: item });
+		}
+		select.value = currentValue;
 	}
 
 	onOpen() {
@@ -61,32 +87,21 @@ export default class BudgetFormModal extends Modal {
 		});
 
 		// Account dropdowns
-		const accountOptions: Record<string, string> = { "": "" };
-		for (const acc of this.formOptions.accounts) {
-			accountOptions[acc] = acc;
-		}
-
 		new Setting(contentEl).setName("From account").addDropdown((dd) => {
-			dd.addOptions(accountOptions);
+			this.fromAccountSelect = dd.selectEl;
+			dd.addOption("", "");
+			for (const acc of this.formOptions.accounts) dd.addOption(acc, acc);
 			dd.setValue(this.input.fromAccount);
-			dd.onChange((v) => {
-				this.input.fromAccount = v;
-			});
+			dd.onChange((v) => { this.input.fromAccount = v; });
 		});
 
 		new Setting(contentEl).setName("To account").addDropdown((dd) => {
-			dd.addOptions(accountOptions);
+			this.toAccountSelect = dd.selectEl;
+			dd.addOption("", "");
+			for (const acc of this.formOptions.accounts) dd.addOption(acc, acc);
 			dd.setValue(this.input.toAccount);
-			dd.onChange((v) => {
-				this.input.toAccount = v;
-			});
+			dd.onChange((v) => { this.input.toAccount = v; });
 		});
-
-		// Currency options
-		const currencyOptions: Record<string, string> = {};
-		for (const c of this.formOptions.commodities) {
-			currencyOptions[c] = c;
-		}
 
 		// From amount (required) + currency
 		new Setting(contentEl)
@@ -115,11 +130,10 @@ export default class BudgetFormModal extends Modal {
 				);
 			})
 			.addDropdown((dd) => {
-				dd.addOptions(currencyOptions);
+				this.fromCurrencySelect = dd.selectEl;
+				for (const c of this.formOptions.commodities) dd.addOption(c, c);
 				dd.setValue(this.input.fromCurrency);
-				dd.onChange((v) => {
-					this.input.fromCurrency = v;
-				});
+				dd.onChange((v) => { this.input.fromCurrency = v; });
 			});
 
 		// To amount (optional) + currency
@@ -152,11 +166,10 @@ export default class BudgetFormModal extends Modal {
 				);
 			})
 			.addDropdown((dd) => {
-				dd.addOptions(currencyOptions);
+				this.toCurrencySelect = dd.selectEl;
+				for (const c of this.formOptions.commodities) dd.addOption(c, c);
 				dd.setValue(this.input.toCurrency);
-				dd.onChange((v) => {
-					this.input.toCurrency = v;
-				});
+				dd.onChange((v) => { this.input.toCurrency = v; });
 			});
 
 		// Details
