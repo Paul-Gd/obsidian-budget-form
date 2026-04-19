@@ -191,8 +191,9 @@
   },
   "active": "8808e41f6ea733da",
   "lastOpenFiles": [
-    "finance/budget/summary.md",
+    "finance/main.journal",
     "finance/demo.journal",
+    "finance/budget/summary.md",
     "finance/budget/2023/01/04-01-2023-burger.md",
     "hledger/main.journal",
     "hledger",

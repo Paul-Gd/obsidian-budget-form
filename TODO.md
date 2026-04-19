@@ -143,6 +143,39 @@ Pre-fills the form modal with these values. User reviews and submits.
 
 ---
 
+## Phase 6: Balance assertions display
+
+### 6.1 What balance assertions look like in the journal
+
+```
+2026-04-19 balance assertion  ; created:1713520000
+    assets:revolut             RON0 = RON 309.79
+    assets:acc1                RON0 = RON 2057.38
+```
+
+A posting with `=` is a balance assertion. One assertion transaction may cover only some accounts.
+There can be zero, one, or many assertions per account across the journal. We always want the **latest** per account.
+
+### 6.2 Data: extract assertions from `print` JSON
+
+hledger's `print` JSON output includes `pbalanceassertion` on each posting:
+- `null` when no assertion
+- `{ baamount: HledgerAmount, baexact: boolean, ... }` when present
+
+Add `pbalanceassertion` field to `HledgerPosting` type. Call `print` (no date filter — we need full history), scan all postings, keep the latest assertion per account (by transaction date).
+
+### 6.3 UI: collapsible section, lazy-loaded
+
+- Render a `<details>` element after the Asset Balances section, **collapsed by default**.
+- On first expand (`toggle` event), call `print` on full journal, extract assertions, render a table.
+- Table columns: **Date**, **Account**, **Asserted Balance**.
+- One row per account (the most recent assertion for that account).
+- Sorted by date descending.
+
+No insertion UI needed — user adds assertions manually via `hledger close --assert`.
+
+---
+
 ## What gets deleted
 
 - `budgetEntries.json` storage logic (`getAllBudgetEntries`, `saveAllBudgetEntries` in helpers.ts)

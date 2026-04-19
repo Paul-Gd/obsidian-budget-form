@@ -16,6 +16,7 @@
 	"author": "PaulGd",
 	"license": "MIT",
 	"devDependencies": {
+		"@codemirror/commands": "^6.10.3",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",

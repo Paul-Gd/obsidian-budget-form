@@ -44,3 +44,18 @@ account equity:opening-balances
     expenses:food            RON320
     assets:cash
 
+2026-04-17 assert balances  ; assert:
+    assets:cash               RON0 = RON180
+    assets:revolut            RON0 = RON500
+
+2026-04-18 groceries  ; created:1709251200
+    expenses:food            RON100
+    assets:revolut
+
+2026-04-19 assert balances  ; assert:
+    assets:bank            RON0.00 = RON21569.50
+    assets:revolut            RON0 = RON400
+
+2026-04-20 groceries  ; created:1709251200
+    expenses:food            RON100
+    assets:revolut

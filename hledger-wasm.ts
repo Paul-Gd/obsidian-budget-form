@@ -69,17 +69,14 @@ async function runHledger(
 
 	try {
 		(instance.exports._start as Function)();
-	} catch (e: unknown) {
-		const msg = e instanceof Error ? e.message : String(e);
-		const isNormalExit =
-			msg === "exit with exit code 0" || msg.includes("unreachable");
-		if (!isNormalExit) {
-			console.error("hledger error:", e);
-		}
+	} catch {
+		// WASM exits via exceptions for both success and failure (exit code 0
+		// and "unreachable" are indistinguishable). We detect real errors below
+		// by checking stderr + empty stdout.
 	}
 
-	if (stderr.trim()) {
-		console.warn("hledger stderr:", stderr);
+	if (stderr.trim() && !stdout.trim()) {
+		throw new Error(stderr.trim());
 	}
 
 	return stdout.trim();
@@ -137,9 +134,15 @@ export interface HledgerAmount {
 	acost: unknown;
 }
 
+export interface HledgerBalanceAssertion {
+	baamount: HledgerAmount;
+	baexact: boolean;
+}
+
 export interface HledgerPosting {
 	paccount: string;
 	pamount: HledgerAmount[];
+	pbalanceassertion: HledgerBalanceAssertion | null;
 	pcomment: string;
 	ptype: string;
 }

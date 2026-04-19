@@ -1,14 +1,16 @@
-/* JournalView source editor */
+/* JournalView source editor (CodeMirror container) */
 .journal-source {
-    width: 100%;
     height: 100%;
-    resize: none;
-    border: none;
-    padding: 1em;
+    overflow: auto;
+}
+
+.journal-source .cm-editor {
+    height: 100%;
+}
+
+.journal-source .cm-scroller {
     font-family: var(--font-monospace);
     font-size: var(--font-text-size);
-    background: var(--background-primary);
-    color: var(--text-normal);
 }
 
 /* JournalView preview */
@@ -50,6 +52,10 @@
 .journal-error {
     padding: 2em;
     color: var(--text-error);
+    white-space: pre-wrap;
+    font-family: var(--font-monospace);
+    font-size: var(--font-text-size);
+    margin: 0;
 }
 
 /* Filter bar */
@@ -77,6 +83,14 @@
     background: var(--background-primary);
     color: var(--text-normal);
     font-size: var(--font-text-size);
+}
+
+/* Assertions toggle */
+.journal-assertions-toggle summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 4px 0;
 }
 
 /* Amount coloring */

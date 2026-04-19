@@ -1,4 +1,7 @@
 import { TextFileView, WorkspaceLeaf, setIcon } from "obsidian";
+import { EditorView, lineNumbers, keymap } from "@codemirror/view";
+import { EditorState } from "@codemirror/state";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import {
 	accounts,
 	balance,
@@ -17,7 +20,8 @@ type ViewMode = "source" | "preview";
 export class JournalView extends TextFileView {
 	private plugin: SimpleBudgetFormPlugin;
 	private mode: ViewMode = "preview";
-	private editorEl: HTMLTextAreaElement;
+	private editorEl: HTMLDivElement;
+	private editorView: EditorView | null = null;
 	private previewEl: HTMLDivElement;
 	private toggleAction: HTMLElement;
 	private renderVersion = 0;
@@ -43,12 +47,7 @@ export class JournalView extends TextFileView {
 	}
 
 	async onOpen(): Promise<void> {
-		this.editorEl = this.contentEl.createEl("textarea", {
-			cls: "journal-source",
-		});
-		this.editorEl.addEventListener("input", () => {
-			this.requestSave();
-		});
+		this.editorEl = this.contentEl.createDiv({ cls: "journal-source" });
 		this.editorEl.hide();
 
 		this.previewEl = this.contentEl.createDiv({ cls: "journal-preview" });
@@ -61,19 +60,31 @@ export class JournalView extends TextFileView {
 	}
 
 	async onClose(): Promise<void> {
+		if (this.editorView) {
+			this.editorView.destroy();
+			this.editorView = null;
+		}
 		this.contentEl.empty();
 	}
 
 	getViewData(): string {
-		if (this.mode === "source") {
-			return this.editorEl.value;
+		if (this.mode === "source" && this.editorView) {
+			return this.editorView.state.doc.toString();
 		}
 		return this.data;
 	}
 
 	setViewData(data: string, clear: boolean): void {
 		this.data = data;
-		this.editorEl.value = data;
+		if (this.editorView) {
+			this.editorView.dispatch({
+				changes: {
+					from: 0,
+					to: this.editorView.state.doc.length,
+					insert: data,
+				},
+			});
+		}
 		if (clear) {
 			this.renderVersion++;
 			this.mode = "preview";
@@ -85,21 +96,61 @@ export class JournalView extends TextFileView {
 
 	clear(): void {
 		this.data = "";
-		this.editorEl.value = "";
+		if (this.editorView) {
+			this.editorView.dispatch({
+				changes: {
+					from: 0,
+					to: this.editorView.state.doc.length,
+					insert: "",
+				},
+			});
+		}
 		this.previewEl.empty();
 		this.renderVersion++;
 	}
 
+	private createEditorView(): void {
+		if (this.editorView) return;
+
+		this.editorView = new EditorView({
+			state: EditorState.create({
+				doc: this.data,
+				extensions: [
+					lineNumbers(),
+					history(),
+					keymap.of([...defaultKeymap, ...historyKeymap]),
+					EditorView.updateListener.of((update) => {
+						if (update.docChanged) {
+							this.requestSave();
+						}
+					}),
+				],
+			}),
+			parent: this.editorEl,
+		});
+	}
+
 	private toggleMode(): void {
 		if (this.mode === "source") {
-			this.data = this.editorEl.value;
+			if (this.editorView) {
+				this.data = this.editorView.state.doc.toString();
+			}
 			this.mode = "preview";
 			this.editorEl.hide();
 			this.previewEl.show();
 			setIcon(this.toggleAction, "code");
 			this.renderPreview();
 		} else {
-			this.editorEl.value = this.data;
+			this.createEditorView();
+			if (this.editorView) {
+				this.editorView.dispatch({
+					changes: {
+						from: 0,
+						to: this.editorView.state.doc.length,
+						insert: this.data,
+					},
+				});
+			}
 			this.mode = "source";
 			this.previewEl.hide();
 			this.editorEl.show();
@@ -164,10 +215,12 @@ export class JournalView extends TextFileView {
 			const assetBal = await balance(this.data, "assets");
 			if (thisRender !== this.renderVersion) return;
 			this.buildBalanceTable(this.previewEl, assetBal);
+
+			this.buildAssertionsToggle(this.previewEl, thisRender);
 		} catch (e) {
 			if (thisRender !== this.renderVersion) return;
 			this.previewEl.empty();
-			this.previewEl.createDiv({
+			this.previewEl.createEl("pre", {
 				cls: "journal-error",
 				text: e instanceof Error ? e.message : String(e),
 			});
@@ -368,6 +421,102 @@ export class JournalView extends TextFileView {
 
 			row.createEl("td", { text: this.shortAccountName(fromPosting?.paccount ?? "") });
 			row.createEl("td", { text: this.shortAccountName(toPosting?.paccount ?? "") });
+		}
+	}
+
+	private buildAssertionsToggle(
+		container: HTMLElement,
+		expectedRender: number
+	): void {
+		const section = container.createDiv({ cls: "journal-section" });
+		const details = section.createEl("details", {
+			cls: "journal-assertions-toggle",
+		});
+		details.createEl("summary", { text: "Recent Balance Assertions" });
+		const content = details.createDiv();
+		let loaded = false;
+
+		details.addEventListener("toggle", async () => {
+			if (!details.open || loaded) return;
+			loaded = true;
+			content.createDiv({ cls: "journal-loading", text: "Loading..." });
+
+			try {
+				const allTxns = await print(this.data);
+				if (expectedRender !== this.renderVersion) return;
+
+				const latestByAccount = this.extractLatestAssertions(allTxns);
+				content.empty();
+
+				if (latestByAccount.length === 0) {
+					content.createDiv({
+						cls: "journal-loading",
+						text: "No balance assertions found.",
+					});
+					return;
+				}
+
+				this.buildAssertionsTable(content, latestByAccount);
+			} catch (e) {
+				content.empty();
+				content.createEl("pre", {
+					cls: "journal-error",
+					text: e instanceof Error ? e.message : String(e),
+				});
+			}
+		});
+	}
+
+	private extractLatestAssertions(
+		txns: HledgerTransaction[]
+	): { date: string; account: string; amount: HledgerAmount }[] {
+		const latest = new Map<
+			string,
+			{ date: string; account: string; amount: HledgerAmount; tindex: number }
+		>();
+
+		for (const txn of txns) {
+			for (const posting of txn.tpostings) {
+				if (!posting.pbalanceassertion) continue;
+
+				const existing = latest.get(posting.paccount);
+				const isNewer = !existing || txn.tindex > existing.tindex;
+				if (isNewer) {
+					latest.set(posting.paccount, {
+						date: txn.tdate,
+						account: posting.paccount,
+						amount: posting.pbalanceassertion.baamount,
+						tindex: txn.tindex,
+					});
+				}
+			}
+		}
+
+		return [...latest.values()].sort((a, b) =>
+			b.date.localeCompare(a.date)
+		);
+	}
+
+	private buildAssertionsTable(
+		container: HTMLElement,
+		rows: { date: string; account: string; amount: HledgerAmount }[]
+	): void {
+		const table = container.createEl("table", { cls: "journal-table" });
+		const thead = table.createEl("thead");
+		const headerRow = thead.createEl("tr");
+		headerRow.createEl("th", { text: "Date" });
+		headerRow.createEl("th", { text: "Account" });
+		headerRow.createEl("th", { text: "Asserted Balance", cls: "journal-amount" });
+
+		const tbody = table.createEl("tbody");
+		for (const row of rows) {
+			const tr = tbody.createEl("tr");
+			tr.createEl("td", { text: row.date });
+			tr.createEl("td", { text: row.account });
+			tr.createEl("td", {
+				text: this.formatAmount(row.amount),
+				cls: this.amountColorCls(row.amount),
+			});
 		}
 	}
 
