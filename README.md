@@ -1,17 +1,11 @@
 # Obsidian Budget Form
 
-This is a simple, **opinionated** plugin that helps you keep track of your budget and account balances by storing all budget entries in a single JSON file. I created this form because I wanted to efficiently manage all my expenses and current balance in Obsidian without slowing down the application.
+A simple, **opinionated** Obsidian plugin for personal accounting using [hledger](https://hledger.org/) journal files. Transactions are stored in a standard `.journal` file and processed in-browser via [hledger-wasm](https://github.com/reesericci/hledger-wasm).
 
 ## Example
 
-You can also check the [example vault](./budget-form-example-vault) (download `budget-form-example-vault.zip`
+Check the [example vault](./budget-form-example-vault) (download `budget-form-example-vault.zip`
 from [the release page](https://github.com/Paul-Gd/obsidian-budget-form/releases)) to try this plugin out.
-
-Using the [dataview plugin](https://blacksmithgu.github.io/obsidian-dataview/), all budget entries can be displayed along
-with the balance. Some filters can be added in order to reduce the number of entries displayed.
-
-![form](./docs/photos/form.png)
-![summary](./docs/photos/summary.png)
 
 ## How to install
 
@@ -19,77 +13,97 @@ Download the latest version (`budget-form-plugin.zip`)
 from [the release page](https://github.com/Paul-Gd/obsidian-budget-form/releases) and unzip it in the plugin folder (
 usually located at `/path-to-your-vault/.obsidian/plugins`).
 
+The release zip includes `hledger-wasm.wasm` (~17MB) bundled alongside `main.js`.
+
 ## How to use
 
-This plugin adds a new `$` button in the left ribbon and a new command
-called `Obsidian Budget Form: Add new budget entry`.
-![quickAdd](./docs/photos/quickAdd.png)
+### Journal view
 
-## Structure
+Open any `.journal` file in Obsidian. The plugin registers a custom view with two modes:
 
-All budget entries are now stored in a single JSON file. This approach improves performance by reducing the number of individual files Obsidian needs to manage.
+- **Preview mode** — interactive UI with filters, transaction tables, and balances
+- **Source mode** — CodeMirror editor with line numbers for direct editing
 
-The JSON file contains multiple budget entries with the following fields:
+Toggle between modes using the code icon in the view actions bar.
 
--   date
--   from and to account
--   amount
--   tag
--   details
+### Preview mode UI
 
-### Accounts
+**Filters** (top of page):
+- **Month** — filter transactions by month
+- **Account** — select an account to see its register, or "All" for all transactions
+- **Last** — limit the number of rows displayed
 
-The files from the accounts folder will be used in the `From account` and `To account` categories. Accounts can have a
-category.
+**Transactions table**:
+- With no account selected: shows all transactions (date, details, amount, from, to)
+- With an account selected: shows that account's register with running balance
 
-Example for [cash "account"](./budget-form-example-vault/finance/budget/accounts/cash.md):
+**Asset balances**: always visible below the transactions, showing the balance of all `assets:*` accounts.
+
+**Balance assertions**: collapsible section showing the most recent balance assertion per account (date, account, asserted balance).
+
+### Adding transactions
+
+Click the `$` ribbon icon or run the command `Obsidian Budget Form: Add new budget entry`. The form has the following fields:
+
+- **Date + Time** — date becomes the transaction date, time is stored as a `created` tag (unix timestamp)
+- **From account** — source account (dropdown from journal accounts)
+- **To account** — destination account (must differ from "from")
+- **From amount + currency** — required, always written as negative in the journal. Default currency: RON
+- **To amount + currency** — optional, only needed for multi-currency transactions. When omitted, hledger infers the balancing amount
+- **Details** — transaction description (newlines stripped)
+
+New accounts must be added manually to the journal file (e.g. `account expenses:subscriptions`).
+
+### Journal format
+
+Transactions are appended to the journal file in standard hledger format:
 
 ```
-category:: internal
+2026-04-18 groceries  ; created:1713450000
+    expenses:food
+    assets:revolut      RON-41.81
 ```
 
-### Tags
+Multi-currency example:
 
-The files from the tags folder will be used in the `Tag` category.
+```
+2026-04-18 exchange  ; created:1713450000
+    assets:euro          EUR50
+    assets:revolut      RON-250
+```
 
-Example for [groceries tag](./budget-form-example-vault/finance/budget/tags/groceries.md)
+### Balance assertions
 
-### JSON File
+Balance assertions let you record the known balance of an account at a point in time, useful for reconciling against bank statements. They look like this in the journal:
 
-The budget entries are stored in a single JSON file defined by the plugin settings.
+```
+2026-04-19 assert balances  ; assert:
+    assets:revolut             RON0 = RON 309.79
+    assets:acc1                RON0 = RON 2057.38
+```
 
-Example of a budget entry in `budgetEntries.json`:
+An assertion can cover any subset of accounts — it doesn't need to list them all.
 
-```json
-[
-  {
-    "date": "2023-01-03T07:25:00.000Z",
-    "fromAccount": "[[finance/budget/accounts/main account.md]]",
-    "toAccount": "[[finance/budget/accounts/expenses.md]]",
-    "amount": 10,
-    "tag": "[[finance/budget/tags/groceries.md]]",
-    "details": "bread"
-  }
-]
+If an assertion doesn't match the calculated balance, hledger will report an error when the journal is opened in preview mode, showing the expected vs actual balance and which account is wrong.
+
+The preview mode has a collapsible **"Recent Balance Assertions"** section that shows the latest assertion date and amount for each account.
+
+To add assertions, edit the journal in source mode or use the hledger CLI:
+
+```bash
+hledger -f main.journal close --assert >> main.journal
 ```
 
 ## Plugin settings
 
-![settings](./docs/photos/settings.png)
-The following settings can be changed:
-
--   Accounts Folder Path - the path from where the `From account` and `To account` fields are populated
--   Tags Folder Path - the path from where the `Tag` field is populated
--   Template File Path - the path where the **template** for the newly created entry is located
--   JSON File Path - the path where all budget entries will be stored as a single JSON file
--   Summary File Path - the path where the summary is located. Complete only if you want the summary to open after a new
-    entry was inserted
+- **Journal File Path** — path to the `.journal` file where transactions are stored
 
 ## Obsidian URL
 
-This plugin can handle opening and populating data in the form by using URLs such as [obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out](obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out)
+Pre-fill the form via URL:
 
-## Summary
+```
+obsidian://budgetForm/openBudgetFormData?amount=10.23&details=groceries&fromAccount=assets:cash&toAccount=expenses:food&currency=RON
+```
 
-The summary is generated by dataview and not included with this plugin. You
-can [download it from the example vault](./budget-form-example-vault/finance/budget/summary.md).
+Supported parameters: `amount`, `currency`, `details`, `fromAccount`, `toAccount`, `toAmount`, `toCurrency`.
