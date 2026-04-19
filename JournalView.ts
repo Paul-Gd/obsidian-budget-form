@@ -6,6 +6,7 @@ import {
 	aregister,
 	HledgerAmount,
 	HledgerTransaction,
+	HledgerRegisterEntry,
 } from "./hledger-wasm";
 
 export const JOURNAL_VIEW_TYPE = "journal-view";
@@ -20,6 +21,7 @@ export class JournalView extends TextFileView {
 	private renderVersion = 0;
 	private selectedMonth = "";
 	private selectedAccount = "";
+	private selectedLimit = 0; // 0 = show all
 
 	getViewType(): string {
 		return JOURNAL_VIEW_TYPE;
@@ -111,25 +113,30 @@ export class JournalView extends TextFileView {
 				: [];
 
 			if (this.selectedAccount) {
-				const entries = await aregister(
+				const allEntries = await aregister(
 					this.data,
 					this.selectedAccount,
 					...dateFilter
 				);
 				if (thisRender !== this.renderVersion) return;
+				const entries = this.selectedLimit
+					? allEntries.slice(0, this.selectedLimit)
+					: allEntries;
 				this.buildRegisterTable(
 					this.previewEl,
 					entries,
-					`${this.selectedAccount} (${entries.length})`,
-					this.selectedAccount
+					`${this.selectedAccount} (${entries.length} of ${allEntries.length})`
 				);
 			} else {
-				const txns = await print(this.data, ...dateFilter);
+				const allTxns = await print(this.data, ...dateFilter);
 				if (thisRender !== this.renderVersion) return;
+				const txns = this.selectedLimit
+					? allTxns.slice(-this.selectedLimit)
+					: allTxns;
 				this.buildTransactionsTable(
 					this.previewEl,
 					txns,
-					`Transactions (${txns.length})`
+					`Transactions (${txns.length} of ${allTxns.length})`
 				);
 			}
 
@@ -182,6 +189,20 @@ export class JournalView extends TextFileView {
 		accountSelect.value = this.selectedAccount;
 		accountSelect.addEventListener("change", () => {
 			this.selectedAccount = accountSelect.value;
+			this.renderPreview();
+		});
+
+		const limitGroup = bar.createDiv({ cls: "journal-filter" });
+		limitGroup.createEl("label", { text: "Last" });
+		const limitInput = limitGroup.createEl("input", {
+			type: "number",
+			value: this.selectedLimit ? String(this.selectedLimit) : "",
+			placeholder: "All",
+		});
+		limitInput.style.width = "5em";
+		limitInput.addEventListener("change", () => {
+			const val = parseInt(limitInput.value);
+			this.selectedLimit = val > 0 ? val : 0;
 			this.renderPreview();
 		});
 	}
@@ -241,9 +262,8 @@ export class JournalView extends TextFileView {
 
 	private buildRegisterTable(
 		container: HTMLElement,
-		txns: HledgerTransaction[],
-		title: string,
-		selectedAccount: string
+		entries: HledgerRegisterEntry[],
+		title: string
 	): void {
 		const section = container.createDiv({ cls: "journal-section" });
 		section.createEl("h3", { text: title });
@@ -251,35 +271,30 @@ export class JournalView extends TextFileView {
 		const table = section.createEl("table", { cls: "journal-table" });
 		const thead = table.createEl("thead");
 		const headerRow = thead.createEl("tr");
-		for (const col of ["Date", "Details", "Other Account", "Amount"]) {
-			const cls = col === "Amount" ? "journal-amount" : undefined;
+		for (const col of ["Date", "Details", "Other Account", "Amount", "Balance"]) {
+			const cls = col === "Amount" || col === "Balance" ? "journal-amount" : undefined;
 			headerRow.createEl("th", { text: col, cls });
 		}
 
 		const tbody = table.createEl("tbody");
-		const reversed = [...txns].reverse();
-		for (const txn of reversed) {
-			const matchedPosting = txn.tpostings.find(
-				(p) => p.paccount === selectedAccount
-			);
-			const otherPosting = txn.tpostings.find(
-				(p) => p.paccount !== selectedAccount
-			);
-
+		for (const entry of entries) {
 			const row = tbody.createEl("tr");
-			row.createEl("td", { text: txn.tdate });
-			row.createEl("td", { text: txn.tdescription });
-			row.createEl("td", { text: otherPosting?.paccount ?? "" });
+			row.createEl("td", { text: entry.tdate });
+			row.createEl("td", { text: entry.tdescription });
+			row.createEl("td", { text: entry.otherAccounts.join(", ") });
+			this.renderAmounts(row, entry.change);
+			this.renderAmounts(row, entry.balance);
+		}
+	}
 
-			const amountCell = row.createEl("td", { cls: "journal-amount" });
-			const changeAmounts = matchedPosting?.pamount ?? [];
-			for (let i = 0; i < changeAmounts.length; i++) {
-				if (i > 0) amountCell.createEl("br");
-				amountCell.createEl("span", {
-					text: this.formatAmount(changeAmounts[i]),
-					cls: this.amountColorCls(changeAmounts[i]),
-				});
-			}
+	private renderAmounts(row: HTMLElement, amounts: HledgerAmount[]): void {
+		const cell = row.createEl("td", { cls: "journal-amount" });
+		for (let i = 0; i < amounts.length; i++) {
+			if (i > 0) cell.createEl("br");
+			cell.createEl("span", {
+				text: this.formatAmount(amounts[i]),
+				cls: this.amountColorCls(amounts[i]),
+			});
 		}
 	}
 

@@ -54,7 +54,7 @@ async function runHledger(
 	];
 
 	const wasi = new WASI(
-		["hledger", command, "/journal.hledger", ...args],
+		["hledger", command, "-f", "/journal.hledger", ...args],
 		[],
 		fds,
 		{ debug: false }
@@ -113,7 +113,7 @@ export async function aregister(
 	journal: string,
 	account: string,
 	...args: string[]
-): Promise<HledgerTransaction[]> {
+): Promise<HledgerRegisterEntry[]> {
 	const raw = await runHledger(journal, "aregister", account, ...args);
 	if (!raw) return [];
 	return JSON.parse(raw);
@@ -151,4 +151,13 @@ export interface HledgerTransaction {
 	ttags: [string, string][];
 	tcomment: string;
 	tindex: number;
+}
+
+export interface HledgerRegisterEntry {
+	tindex: number;
+	tdate: string;
+	tdescription: string;
+	otherAccounts: string[];
+	change: HledgerAmount[];
+	balance: HledgerAmount[];
 }
