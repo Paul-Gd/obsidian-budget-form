@@ -1,199 +1,134 @@
-import {
-	Notice,
-	ObsidianProtocolData,
-	Plugin,
-} from "obsidian";
+import { Notice, ObsidianProtocolData, Plugin, TFile } from "obsidian";
 import BudgetFormModal, { BudgetFormData } from "./BudgetFormModal";
 import {
-	focusOrOpenFileInEditor,
-	loadFileLinksFromFolder,
-	readFileContent,
-	initializeJsonFile,
-	getAllBudgetEntries,
-	saveAllBudgetEntries,
-} from "./helpers";
-import {
-	BudgetFormPluginPluginSettings,
+	BudgetFormPluginSettings,
 	BudgetFormSettingTab,
 	DEFAULT_SETTINGS,
 } from "./BudgetFormSettingTab";
-import { initHledger } from "./hledger-wasm";
+import { initHledger, accounts, commodities } from "./hledger-wasm";
 import { JournalView, JOURNAL_VIEW_TYPE } from "./JournalView";
 
-export default class SimpleBudgetFormPlugin extends Plugin {
-	settings: BudgetFormPluginPluginSettings;
+const DEFAULT_CURRENCY = "RON";
 
-	getInitialDefaultData(): BudgetFormData {
-		return {
-			date: new Date(),
-			amount: 0,
-			details: "",
-			fromAccount: "",
-			toAccount: "",
-			tag: "",
-		};
-	}
+export default class SimpleBudgetFormPlugin extends Plugin {
+	settings: BudgetFormPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
-		try {
-			await initializeJsonFile(this.settings.jsonFilePath, this.app.vault);
-		} catch (e) {
-			// JSON file may already exist on disk — safe to ignore
-		}
-
 		await this.initHledgerWasm();
+
 		this.registerView(JOURNAL_VIEW_TYPE, (leaf) => new JournalView(leaf));
 		this.registerExtensions(["journal"], JOURNAL_VIEW_TYPE);
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon(
-			"dollar-sign",
-			"Add a new budget entry",
-			this.openBudgetFormModal.bind(this)
+		this.addRibbonIcon("dollar-sign", "Add a new budget entry", () =>
+			this.openBudgetFormModal()
 		);
-		// This adds a simple command that can be triggered anywhere
+
 		this.addCommand({
 			id: "budget-form-modal",
 			name: "Add a new budget entry",
-			callback: this.openBudgetFormModal.bind(this),
+			callback: () => this.openBudgetFormModal(),
 		});
-		// This adds a settings tab so the user can configure various aspects of the plugin
+
 		this.addSettingTab(new BudgetFormSettingTab(this.app, this));
-		// This adds handler for obsidian urls
-		// Example obsidian://budgetForm/openBudgetFormData?amount=10.23&details=something&fromAccount=cash&toAccount=expenses&tag=going%20out
+
+		// Example: obsidian://budgetForm/openBudgetFormData?amount=10.23&details=emag&fromAccount=assets:cash&toAccount=expenses:electronics&currency=RON
 		this.registerObsidianProtocolHandler(
 			"budgetForm/openBudgetFormData",
-			this.handleObsidianProtocolOpenBudgetForm.bind(this)
+			this.handleProtocolUrl.bind(this)
 		);
 	}
 
-	private handleObsidianProtocolOpenBudgetForm(data: ObsidianProtocolData) {
-		console.log("opening link", data);
-		const formData: BudgetFormData = this.getInitialDefaultData();
-		if (!isNaN(parseFloat(data.amount))) {
-			formData.amount = parseFloat(data.amount);
+	private handleProtocolUrl(data: ObsidianProtocolData) {
+		const prefill: Partial<BudgetFormData> = {};
+
+		if (data.amount && !isNaN(parseFloat(data.amount))) {
+			prefill.fromAmount = parseFloat(data.amount);
 		}
-		if ("details" in data) {
-			formData.details = data.details;
+		if (data.currency) {
+			prefill.fromCurrency = data.currency;
 		}
-		if ("fromAccount" in data) {
-			formData.fromAccount = data.fromAccount;
+		if (data.details) {
+			prefill.details = data.details;
 		}
-		if ("toAccount" in data) {
-			formData.toAccount = data.toAccount;
+		if (data.fromAccount) {
+			prefill.fromAccount = data.fromAccount;
 		}
-		if ("tag" in data) {
-			formData.tag = data.tag;
+		if (data.toAccount) {
+			prefill.toAccount = data.toAccount;
+		}
+		if (data.toAmount && !isNaN(parseFloat(data.toAmount))) {
+			prefill.toAmount = parseFloat(data.toAmount);
+		}
+		if (data.toCurrency) {
+			prefill.toCurrency = data.toCurrency;
 		}
 
-		this.openBudgetFormModal(formData).then();
+		this.openBudgetFormModal(prefill);
 	}
 
-	private async openBudgetFormModal(partialInitialData?: BudgetFormData) {
-		if (
-			!this.settings.accountsFolderPath ||
-			!this.settings.tagsFolderPath ||
-			!this.settings.templateFilePath ||
-			!this.settings.jsonFilePath
-		) {
-			new Notice(
-				"Define 'Accounts Folder Path', 'Tags Folder Path', 'Template File Path', and 'JSON File Path' from settings"
-			);
+	private async openBudgetFormModal(prefill?: Partial<BudgetFormData>) {
+		if (!this.settings.journalFilePath) {
+			new Notice("Set the journal file path in plugin settings first");
 			return;
 		}
-		const { accounts, tags, entryTemplate } =
-			await this.getPluginSettings();
-		if (!accounts || !tags || !entryTemplate) {
-			new Notice(
-				"Could not find accounts folder, tags folder, or template file!"
-			);
-			return;
-		}
-		const initialData = this.getInitialData(
-			partialInitialData,
-			accounts,
-			tags
+
+		const journalFile = this.app.vault.getAbstractFileByPath(
+			this.settings.journalFilePath
 		);
+		if (!(journalFile instanceof TFile)) {
+			new Notice(
+				`Journal file not found: ${this.settings.journalFilePath}`
+			);
+			return;
+		}
+
+		const journalContent = await this.app.vault.read(journalFile);
+		const [accountList, commodityList] = await Promise.all([
+			accounts(journalContent),
+			commodities(journalContent),
+		]);
+
+		if (!commodityList.includes(DEFAULT_CURRENCY)) {
+			commodityList.unshift(DEFAULT_CURRENCY);
+		}
+
+		const initialData: BudgetFormData = {
+			date: new Date(),
+			fromAccount: "",
+			toAccount: "",
+			fromAmount: 0,
+			fromCurrency: DEFAULT_CURRENCY,
+			toAmount: null,
+			toCurrency: DEFAULT_CURRENCY,
+			details: "",
+			...prefill,
+		};
 
 		new BudgetFormModal(
 			initialData,
-			{ accounts, tags },
+			{ accounts: accountList, commodities: commodityList },
 			this.app,
-			this.saveEntryToJson.bind(this)
+			(formData, onSuccess) =>
+				this.appendTransaction(formData, journalFile, onSuccess)
 		).open();
 	}
 
-	private getInitialData(
-		partialInitialData: BudgetFormData | undefined,
-		accounts: { [p: string]: string },
-		tags: { [p: string]: string }
-	): BudgetFormData {
-		const initialData: BudgetFormData = {
-			...this.getInitialDefaultData(),
-			...partialInitialData,
-		};
-
-		if (initialData.toAccount) {
-			initialData.toAccount = (Object.entries(accounts).find(
-				([, value]) => value === initialData.toAccount
-			) || [initialData.toAccount])[0];
-		}
-		if (initialData.fromAccount) {
-			initialData.fromAccount = (Object.entries(accounts).find(
-				([, value]) => value === initialData.fromAccount
-			) || [initialData.fromAccount])[0];
-		}
-
-		if (initialData.tag) {
-			initialData.tag = (Object.entries(tags).find(
-				([, value]) => value === initialData.tag
-			) || [initialData.tag])[0];
-		}
-		return initialData;
-	}
-
-	private async saveEntryToJson(formData: BudgetFormData, onSuccess: () => void) {
+	private async appendTransaction(
+		data: BudgetFormData,
+		journalFile: TFile,
+		onSuccess: () => void
+	) {
 		try {
-			const entries = await getAllBudgetEntries(this.settings.jsonFilePath, this.app.vault);
-			const newEntry = {
-				date: formData.date.toISOString(),
-				fromAccount: formData.fromAccount,
-				toAccount: formData.toAccount,
-				amount: formData.amount,
-				tag: formData.tag,
-				details: formData.details.toLowerCase().trim(),
-			};
-			// entries.push(newEntry);
-			await saveAllBudgetEntries(this.settings.jsonFilePath, entries, this.app.vault);
+			const transaction = formatTransaction(data);
+			await this.app.vault.append(journalFile, transaction);
+			new Notice("Transaction added");
 			onSuccess();
-
-			const summaryFilePath = this.settings.summaryFilePath;
-			if (summaryFilePath)
-				await focusOrOpenFileInEditor(
-					summaryFilePath,
-					this.app.workspace,
-					this.app.vault
-				);
-		} catch (error) {
-			new Notice(error.message);
+		} catch (e) {
+			new Notice(
+				`Failed to save: ${e instanceof Error ? e.message : String(e)}`
+			);
 		}
-	}
-
-	private async getPluginSettings() {
-		const accounts = loadFileLinksFromFolder(
-			this.settings.accountsFolderPath,
-			this.app.vault
-		);
-		const tags = loadFileLinksFromFolder(
-			this.settings.tagsFolderPath,
-			this.app.vault
-		);
-		const entryTemplate = await readFileContent(
-			this.settings.templateFilePath,
-			this.app.vault
-		);
-		return { accounts, tags, entryTemplate };
 	}
 
 	private async initHledgerWasm() {
@@ -217,4 +152,28 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+}
+
+function formatTransaction(data: BudgetFormData): string {
+	const yyyy = data.date.getFullYear();
+	const mm = String(data.date.getMonth() + 1).padStart(2, "0");
+	const dd = String(data.date.getDate()).padStart(2, "0");
+	const dateStr = `${yyyy}-${mm}-${dd}`;
+	const created = Math.floor(data.date.getTime() / 1000);
+	const details = data.details.replace(/\n/g, " ").trim().toLowerCase();
+
+	const lines = [`${dateStr} ${details}  ; created:${created}`];
+
+	if (data.toAmount !== null) {
+		lines.push(
+			`    ${data.toAccount}  ${data.toCurrency}${data.toAmount}`
+		);
+	} else {
+		lines.push(`    ${data.toAccount}`);
+	}
+	lines.push(
+		`    ${data.fromAccount}  ${data.fromCurrency}-${data.fromAmount}`
+	);
+
+	return "\n" + lines.join("\n") + "\n";
 }

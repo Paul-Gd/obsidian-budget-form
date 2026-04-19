@@ -110,15 +110,28 @@ export class JournalView extends TextFileView {
 				? [`date:${this.selectedMonth}`]
 				: [];
 
-			const txns = this.selectedAccount
-				? await aregister(this.data, this.selectedAccount, ...dateFilter)
-				: await print(this.data, ...dateFilter);
-			if (thisRender !== this.renderVersion) return;
-
-			const title = this.selectedAccount
-				? `${this.selectedAccount} (${txns.length})`
-				: `Transactions (${txns.length})`;
-			this.buildTransactionsTable(this.previewEl, txns, title);
+			if (this.selectedAccount) {
+				const entries = await aregister(
+					this.data,
+					this.selectedAccount,
+					...dateFilter
+				);
+				if (thisRender !== this.renderVersion) return;
+				this.buildRegisterTable(
+					this.previewEl,
+					entries,
+					`${this.selectedAccount} (${entries.length})`,
+					this.selectedAccount
+				);
+			} else {
+				const txns = await print(this.data, ...dateFilter);
+				if (thisRender !== this.renderVersion) return;
+				this.buildTransactionsTable(
+					this.previewEl,
+					txns,
+					`Transactions (${txns.length})`
+				);
+			}
 
 			// Asset balances — always full history, not filtered by period
 			const assetBal = await balance(this.data, "assets");
@@ -216,10 +229,55 @@ export class JournalView extends TextFileView {
 			const row = tbody.createEl("tr");
 			row.createEl("td", { text: account });
 			const amountCell = row.createEl("td", { cls: "journal-amount" });
-			for (const amt of amounts) {
+			for (let i = 0; i < amounts.length; i++) {
+				if (i > 0) amountCell.createEl("br");
 				amountCell.createEl("span", {
-					text: this.formatAmount(amt),
-					cls: this.amountColorCls(amt),
+					text: this.formatAmount(amounts[i]),
+					cls: this.amountColorCls(amounts[i]),
+				});
+			}
+		}
+	}
+
+	private buildRegisterTable(
+		container: HTMLElement,
+		txns: HledgerTransaction[],
+		title: string,
+		selectedAccount: string
+	): void {
+		const section = container.createDiv({ cls: "journal-section" });
+		section.createEl("h3", { text: title });
+
+		const table = section.createEl("table", { cls: "journal-table" });
+		const thead = table.createEl("thead");
+		const headerRow = thead.createEl("tr");
+		for (const col of ["Date", "Details", "Other Account", "Amount"]) {
+			const cls = col === "Amount" ? "journal-amount" : undefined;
+			headerRow.createEl("th", { text: col, cls });
+		}
+
+		const tbody = table.createEl("tbody");
+		const reversed = [...txns].reverse();
+		for (const txn of reversed) {
+			const matchedPosting = txn.tpostings.find(
+				(p) => p.paccount === selectedAccount
+			);
+			const otherPosting = txn.tpostings.find(
+				(p) => p.paccount !== selectedAccount
+			);
+
+			const row = tbody.createEl("tr");
+			row.createEl("td", { text: txn.tdate });
+			row.createEl("td", { text: txn.tdescription });
+			row.createEl("td", { text: otherPosting?.paccount ?? "" });
+
+			const amountCell = row.createEl("td", { cls: "journal-amount" });
+			const changeAmounts = matchedPosting?.pamount ?? [];
+			for (let i = 0; i < changeAmounts.length; i++) {
+				if (i > 0) amountCell.createEl("br");
+				amountCell.createEl("span", {
+					text: this.formatAmount(changeAmounts[i]),
+					cls: this.amountColorCls(changeAmounts[i]),
 				});
 			}
 		}

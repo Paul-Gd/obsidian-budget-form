@@ -29,7 +29,7 @@ account equity:opening-balances
     assets:bank
 
 2025-02-10 freelance payment  ; created:1707523200
-    assets:revolut           EUR500
+    assets:revolut           RON500
     income:freelance
 
 2025-02-15 salary february  ; created:1707955200
@@ -43,5 +43,4 @@ account equity:opening-balances
 2025-03-01 groceries  ; created:1709251200
     expenses:food            RON320
     assets:cash
-
 

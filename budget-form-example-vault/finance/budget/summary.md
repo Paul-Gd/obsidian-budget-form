@@ -180,3 +180,6 @@ if (!dv.current()) {
 }
 
 ```
+
+
+[food](obsidian://budgetForm/openBudgetFormData?amount=41.81&details=kaufland&fromAccount=assets:revolut&toAccount=expenses:food )
