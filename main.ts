@@ -17,7 +17,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 		await this.loadSettings();
 		await this.initHledgerWasm();
 
-		this.registerView(JOURNAL_VIEW_TYPE, (leaf) => new JournalView(leaf));
+		this.registerView(JOURNAL_VIEW_TYPE, (leaf) => new JournalView(leaf, this));
 		this.registerExtensions(["journal"], JOURNAL_VIEW_TYPE);
 
 		this.addRibbonIcon("dollar-sign", "Add a new budget entry", () =>

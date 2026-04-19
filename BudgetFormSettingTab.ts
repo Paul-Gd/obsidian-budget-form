@@ -1,12 +1,24 @@
 import { App, Notice, PluginSettingTab, Setting, TFile } from "obsidian";
 import BudgetFormPlugin from "./main";
 
+export interface JournalViewState {
+	selectedMonth: string;
+	selectedAccount: string;
+	selectedLimit: number;
+}
+
 export interface BudgetFormPluginSettings {
 	journalFilePath: string;
+	journalViewState: JournalViewState;
 }
 
 export const DEFAULT_SETTINGS: BudgetFormPluginSettings = {
 	journalFilePath: "",
+	journalViewState: {
+		selectedMonth: "",
+		selectedAccount: "",
+		selectedLimit: 0,
+	},
 };
 
 export class BudgetFormSettingTab extends PluginSettingTab {

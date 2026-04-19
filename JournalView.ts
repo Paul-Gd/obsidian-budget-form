@@ -8,23 +8,34 @@ import {
 	HledgerTransaction,
 	HledgerRegisterEntry,
 } from "./hledger-wasm";
+import type SimpleBudgetFormPlugin from "./main";
 
 export const JOURNAL_VIEW_TYPE = "journal-view";
 
 type ViewMode = "source" | "preview";
 
 export class JournalView extends TextFileView {
+	private plugin: SimpleBudgetFormPlugin;
 	private mode: ViewMode = "preview";
 	private editorEl: HTMLTextAreaElement;
 	private previewEl: HTMLDivElement;
 	private toggleAction: HTMLElement;
 	private renderVersion = 0;
-	private selectedMonth = "";
-	private selectedAccount = "";
-	private selectedLimit = 0; // 0 = show all
+	private selectedMonth: string;
+	private selectedAccount: string;
+	private selectedLimit: number;
 
 	getViewType(): string {
 		return JOURNAL_VIEW_TYPE;
+	}
+
+	constructor(leaf: WorkspaceLeaf, plugin: SimpleBudgetFormPlugin) {
+		super(leaf);
+		this.plugin = plugin;
+		const saved = plugin.settings.journalViewState;
+		this.selectedMonth = saved.selectedMonth;
+		this.selectedAccount = saved.selectedAccount;
+		this.selectedLimit = saved.selectedLimit;
 	}
 
 	getDisplayText(): string {
@@ -94,6 +105,15 @@ export class JournalView extends TextFileView {
 			this.editorEl.show();
 			setIcon(this.toggleAction, "book-open");
 		}
+	}
+
+	private persistViewState(): void {
+		this.plugin.settings.journalViewState = {
+			selectedMonth: this.selectedMonth,
+			selectedAccount: this.selectedAccount,
+			selectedLimit: this.selectedLimit,
+		};
+		this.plugin.saveSettings();
 	}
 
 	private async renderPreview(): Promise<void> {
@@ -173,6 +193,7 @@ export class JournalView extends TextFileView {
 		monthSelect.value = this.selectedMonth;
 		monthSelect.addEventListener("change", () => {
 			this.selectedMonth = monthSelect.value;
+			this.persistViewState();
 			this.renderPreview();
 		});
 
@@ -183,12 +204,14 @@ export class JournalView extends TextFileView {
 		const allAccOpt = accountSelect.createEl("option", { text: "All" });
 		allAccOpt.value = "";
 		for (const acc of accountList) {
-			const opt = accountSelect.createEl("option", { text: acc });
+			const displayName = acc.startsWith("assets:") ? acc.slice(7) : acc;
+			const opt = accountSelect.createEl("option", { text: displayName });
 			opt.value = acc;
 		}
 		accountSelect.value = this.selectedAccount;
 		accountSelect.addEventListener("change", () => {
 			this.selectedAccount = accountSelect.value;
+			this.persistViewState();
 			this.renderPreview();
 		});
 
@@ -203,6 +226,7 @@ export class JournalView extends TextFileView {
 		limitInput.addEventListener("change", () => {
 			const val = parseInt(limitInput.value);
 			this.selectedLimit = val > 0 ? val : 0;
+			this.persistViewState();
 			this.renderPreview();
 		});
 	}
@@ -281,7 +305,7 @@ export class JournalView extends TextFileView {
 			const row = tbody.createEl("tr");
 			row.createEl("td", { text: entry.tdate });
 			row.createEl("td", { text: entry.tdescription });
-			row.createEl("td", { text: entry.otherAccounts.join(", ") });
+			row.createEl("td", { text: entry.otherAccounts.map(a => this.shortAccountName(a)).join(", ") });
 			this.renderAmounts(row, entry.change);
 			this.renderAmounts(row, entry.balance);
 		}
@@ -342,8 +366,12 @@ export class JournalView extends TextFileView {
 				amountCell.setText(this.formatAmount(toPosting.pamount[0]));
 			}
 
-			row.createEl("td", { text: fromPosting?.paccount ?? "" });
-			row.createEl("td", { text: toPosting?.paccount ?? "" });
+			row.createEl("td", { text: this.shortAccountName(fromPosting?.paccount ?? "") });
+			row.createEl("td", { text: this.shortAccountName(toPosting?.paccount ?? "") });
 		}
+	}
+
+	private shortAccountName(account: string): string {
+		return account.startsWith("assets:") ? account.slice(7) : account;
 	}
 }
