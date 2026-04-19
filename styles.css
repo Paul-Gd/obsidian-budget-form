@@ -16,6 +16,8 @@
 /* JournalView preview */
 .journal-preview {
     padding: 1em;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .journal-section {
