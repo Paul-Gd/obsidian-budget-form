@@ -25,10 +25,23 @@ const copyToExampleVault = {
 				"node_modules/hledger-wasm/dist/hledger-wasm.wasm",
 				`${exampleVaultPluginDir}/hledger-wasm.wasm`
 			);
+			copyFileSync("hledger-worker.js", `${exampleVaultPluginDir}/hledger-worker.js`);
 		});
 	},
 };
 
+// Build the Web Worker first (bundles browser_wasi_shim into it)
+await esbuild.build({
+	entryPoints: ["hledger-worker.ts"],
+	bundle: true,
+	format: "iife",
+	target: "es2020",
+	treeShaking: true,
+	outfile: "hledger-worker.js",
+	logLevel: "info",
+});
+
+// Build the main plugin
 esbuild
 	.build({
 		banner: {

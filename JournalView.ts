@@ -80,7 +80,8 @@ export class JournalView extends TextFileView {
 
 	setViewData(data: string, clear: boolean): void {
 		this.data = data;
-		if (this.editorView) {
+		// Only update CodeMirror when it's visible — updating a hidden editor wastes work
+		if (this.mode === "source" && this.editorView) {
 			this.editorView.dispatch({
 				changes: {
 					from: 0,
@@ -145,15 +146,21 @@ export class JournalView extends TextFileView {
 			setIcon(this.toggleAction, "code");
 			this.renderPreview();
 		} else {
+			const editorExisted = !!this.editorView;
 			this.createEditorView();
-			if (this.editorView) {
-				this.editorView.dispatch({
-					changes: {
-						from: 0,
-						to: this.editorView.state.doc.length,
-						insert: this.data,
-					},
-				});
+			// Only sync content if the editor already existed (it may be stale).
+			// On first creation, createEditorView already sets the doc.
+			if (editorExisted && this.editorView) {
+				const current = this.editorView.state.doc.toString();
+				if (current !== this.data) {
+					this.editorView.dispatch({
+						changes: {
+							from: 0,
+							to: this.editorView.state.doc.length,
+							insert: this.data,
+						},
+					});
+				}
 			}
 			this.mode = "source";
 			this.previewEl.hide();

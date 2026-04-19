@@ -19,17 +19,22 @@ interface FormOptions {
 export default class BudgetFormModal extends Modal {
 	private input: BudgetFormData;
 	private formOptions: FormOptions;
-	private onSubmit: (data: BudgetFormData, onSuccess: () => void) => void;
+	private onSubmit: (data: BudgetFormData) => Promise<void>;
 	private fromAccountSelect: HTMLSelectElement | null = null;
 	private toAccountSelect: HTMLSelectElement | null = null;
 	private fromCurrencySelect: HTMLSelectElement | null = null;
 	private toCurrencySelect: HTMLSelectElement | null = null;
+	private fromAmountInput: HTMLInputElement | null = null;
+	private toAmountInput: HTMLInputElement | null = null;
+	private detailsInput: HTMLInputElement | null = null;
+	private dateInput: HTMLInputElement | null = null;
+	private submitBtn: HTMLButtonElement | null = null;
 
 	constructor(
 		initialData: BudgetFormData,
 		formOptions: FormOptions,
 		app: App,
-		onSubmit: (data: BudgetFormData, onSuccess: () => void) => void
+		onSubmit: (data: BudgetFormData) => Promise<void>
 	) {
 		super(app);
 		this.input = { ...initialData };
@@ -73,16 +78,15 @@ export default class BudgetFormModal extends Modal {
 
 		new Setting(contentEl).setName("Date").addText((component) => {
 			if (!component.inputEl.parentElement) return;
-			component.inputEl.parentElement
-				.createEl("input", {
-					type: "datetime-local",
-					value: localDateTime.toISOString().slice(0, -1),
-				})
-				.addEventListener("input", (ev: Event) => {
-					if (ev.target instanceof HTMLInputElement) {
-						this.input.date = new Date(ev.target.value);
-					}
-				});
+			this.dateInput = component.inputEl.parentElement.createEl("input", {
+				type: "datetime-local",
+				value: localDateTime.toISOString().slice(0, -1),
+			});
+			this.dateInput.addEventListener("input", (ev: Event) => {
+				if (ev.target instanceof HTMLInputElement) {
+					this.input.date = new Date(ev.target.value);
+				}
+			});
 			component.inputEl.parentElement.removeChild(component.inputEl);
 		});
 
@@ -108,7 +112,7 @@ export default class BudgetFormModal extends Modal {
 			.setName("From amount")
 			.addText((component) => {
 				if (!component.inputEl.parentElement) return;
-				const numInput = component.inputEl.parentElement.createEl(
+				this.fromAmountInput = component.inputEl.parentElement.createEl(
 					"input",
 					{
 						type: "number",
@@ -118,8 +122,8 @@ export default class BudgetFormModal extends Modal {
 								: "",
 					}
 				);
-				numInput.step = "0.01";
-				numInput.addEventListener("input", (ev: Event) => {
+				this.fromAmountInput.step = "0.01";
+				this.fromAmountInput.addEventListener("input", (ev: Event) => {
 					if (ev.target instanceof HTMLInputElement) {
 						this.input.fromAmount =
 							parseFloat(ev.target.value) || 0;
@@ -141,7 +145,7 @@ export default class BudgetFormModal extends Modal {
 			.setName("To amount (optional)")
 			.addText((component) => {
 				if (!component.inputEl.parentElement) return;
-				const numInput = component.inputEl.parentElement.createEl(
+				this.toAmountInput = component.inputEl.parentElement.createEl(
 					"input",
 					{
 						type: "number",
@@ -151,9 +155,9 @@ export default class BudgetFormModal extends Modal {
 								: "",
 					}
 				);
-				numInput.step = "0.01";
-				numInput.placeholder = "Leave empty for same currency";
-				numInput.addEventListener("input", (ev: Event) => {
+				this.toAmountInput.step = "0.01";
+				this.toAmountInput.placeholder = "Leave empty for same currency";
+				this.toAmountInput.addEventListener("input", (ev: Event) => {
 					if (ev.target instanceof HTMLInputElement) {
 						const val = ev.target.value.trim();
 						this.input.toAmount = val
@@ -174,6 +178,7 @@ export default class BudgetFormModal extends Modal {
 
 		// Details
 		new Setting(contentEl).setName("Details").addText((text) => {
+			this.detailsInput = text.inputEl;
 			text.setValue(this.input.details);
 			text.onChange((v) => {
 				this.input.details = v;
@@ -181,16 +186,58 @@ export default class BudgetFormModal extends Modal {
 		});
 
 		// Submit
-		new Setting(contentEl).addButton((btn) =>
-			btn
-				.setButtonText("Submit")
-				.setCta()
-				.onClick(() => {
-					if (this.validate()) {
-						this.onSubmit(this.input, () => this.close());
-					}
-				})
-		);
+		new Setting(contentEl)
+			.addButton((btn) => {
+				this.submitBtn = btn.buttonEl;
+				btn.setButtonText("Submit")
+					.setCta()
+					.onClick(() => this.handleSubmit());
+			})
+			.addButton((btn) =>
+				btn
+					.setButtonText("Submit & Close")
+					.onClick(() => this.handleSubmit(true))
+			);
+	}
+
+	private async handleSubmit(closeAfter = false): Promise<void> {
+		if (!this.validate()) return;
+		if (!this.submitBtn) return;
+
+		this.submitBtn.disabled = true;
+		this.submitBtn.setText("Saving...");
+
+		try {
+			await this.onSubmit(this.input);
+
+			if (closeAfter) {
+				this.close();
+				return;
+			}
+
+			// Reset for next entry: clear amounts, details, update date to now
+			this.input.fromAmount = 0;
+			this.input.toAmount = null;
+			this.input.details = "";
+			this.input.date = new Date();
+
+			if (this.fromAmountInput) this.fromAmountInput.value = "";
+			if (this.toAmountInput) this.toAmountInput.value = "";
+			if (this.detailsInput) this.detailsInput.value = "";
+			if (this.dateInput) {
+				const now = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000
+				);
+				now.setMilliseconds(0);
+				now.setSeconds(0);
+				this.dateInput.value = now.toISOString().slice(0, -1);
+			}
+		} finally {
+			if (this.submitBtn) {
+				this.submitBtn.disabled = false;
+				this.submitBtn.setText("Submit");
+			}
+		}
 	}
 
 	private validate(): boolean {

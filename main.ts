@@ -102,8 +102,7 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 			initialData,
 			{ accounts: this.cachedAccounts, commodities: this.cachedCommodities },
 			this.app,
-			(formData, onSuccess) =>
-				this.appendTransaction(formData, journalFile, onSuccess)
+			(formData) => this.appendTransaction(formData, journalFile)
 		);
 		modal.open();
 
@@ -139,19 +138,11 @@ export default class SimpleBudgetFormPlugin extends Plugin {
 
 	private async appendTransaction(
 		data: BudgetFormData,
-		journalFile: TFile,
-		onSuccess: () => void
-	) {
-		try {
-			const transaction = formatTransaction(data);
-			await this.app.vault.append(journalFile, transaction);
-			new Notice("Transaction added");
-			onSuccess();
-		} catch (e) {
-			new Notice(
-				`Failed to save: ${e instanceof Error ? e.message : String(e)}`
-			);
-		}
+		journalFile: TFile
+	): Promise<void> {
+		const transaction = formatTransaction(data);
+		await this.app.vault.append(journalFile, transaction);
+		new Notice("Transaction added");
 	}
 
 	private async initHledgerWasm() {

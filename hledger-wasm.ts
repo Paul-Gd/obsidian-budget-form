@@ -1,29 +1,69 @@
 /**
  * hledger-wasm wrapper adapted for Obsidian.
  *
- * The stock bridge uses fetch() which doesn't work in Obsidian.
- * We load the WASM binary via vault.adapter.readBinary() and cache
- * the compiled WebAssembly.Module so we don't recompile on every command.
+ * All WASM execution runs in a Web Worker so it never blocks the main thread.
+ * The main thread sends journal content + command to the worker via postMessage
+ * and receives the result back asynchronously.
  */
 import { App } from "obsidian";
-import {
-	WASI,
-	OpenFile,
-	File,
-	ConsoleStdout,
-	PreopenDirectory,
-} from "@bjorn3/browser_wasi_shim";
 
-let cachedModule: WebAssembly.Module | null = null;
+let worker: Worker | null = null;
+let nextId = 0;
+const pending = new Map<
+	number,
+	{ resolve: (v: string) => void; reject: (e: Error) => void }
+>();
+
+function sendToWorker(
+	type: string,
+	data: Record<string, unknown>,
+	transfer?: Transferable[]
+): Promise<string> {
+	if (!worker) {
+		return Promise.reject(
+			new Error("hledger WASM not initialized. Call initHledger() first.")
+		);
+	}
+	return new Promise((resolve, reject) => {
+		const id = ++nextId;
+		pending.set(id, { resolve, reject });
+		worker!.postMessage({ type, id, ...data }, transfer ?? []);
+	});
+}
 
 export async function initHledger(app: App): Promise<void> {
-	if (cachedModule) return;
+	if (worker) return;
 
 	const pluginDir = `${app.vault.configDir}/plugins/obsidian-budget-form`;
-	const wasmBytes = await app.vault.adapter.readBinary(
-		`${pluginDir}/hledger-wasm.wasm`
+	const [wasmBytes, workerCode] = await Promise.all([
+		app.vault.adapter.readBinary(`${pluginDir}/hledger-wasm.wasm`),
+		app.vault.adapter.read(`${pluginDir}/hledger-worker.js`),
+	]);
+
+	worker = new Worker(
+		URL.createObjectURL(
+			new Blob([workerCode], { type: "application/javascript" })
+		)
 	);
-	cachedModule = await WebAssembly.compile(wasmBytes);
+
+	worker.onmessage = (e: MessageEvent) => {
+		const { id, result, error } = e.data;
+		const p = pending.get(id);
+		if (!p) return;
+		pending.delete(id);
+		if (error) {
+			p.reject(new Error(error));
+		} else {
+			p.resolve(result ?? "");
+		}
+	};
+
+	worker.onerror = (e: ErrorEvent) => {
+		console.error("hledger worker error:", e.message);
+	};
+
+	// Transfer the ArrayBuffer so it's not copied
+	await sendToWorker("init", { wasmBytes }, [wasmBytes]);
 }
 
 async function runHledger(
@@ -31,55 +71,11 @@ async function runHledger(
 	command: string,
 	...args: string[]
 ): Promise<string> {
-	if (!cachedModule) {
-		throw new Error("hledger WASM not initialized. Call initHledger() first.");
-	}
-
-	let stdout = "";
-	let stderr = "";
-
-	const journalBytes = new TextEncoder().encode(journalContent);
-	const fds = [
-		new OpenFile(new File([])),
-		ConsoleStdout.lineBuffered((msg: string) => {
-			stdout += msg + "\n";
-		}),
-		ConsoleStdout.lineBuffered((msg: string) => {
-			stderr += msg + "\n";
-		}),
-		new PreopenDirectory(
-			"/",
-			new Map([["journal.hledger", new File(journalBytes)]])
-		),
-	];
-
-	const wasi = new WASI(
-		["hledger", command, "-f", "/journal.hledger", ...args],
-		[],
-		fds,
-		{ debug: false }
-	);
-
-	const instance = await WebAssembly.instantiate(cachedModule, {
-		wasi_snapshot_preview1: wasi.wasiImport,
+	return sendToWorker("run", {
+		journal: journalContent,
+		command,
+		args,
 	});
-
-	// browser_wasi_shim expects a specific shape, but WebAssembly.Instance.exports is generic
-	wasi.initialize(instance as any);
-
-	try {
-		(instance.exports._start as Function)();
-	} catch {
-		// WASM exits via exceptions for both success and failure (exit code 0
-		// and "unreachable" are indistinguishable). We detect real errors below
-		// by checking stderr + empty stdout.
-	}
-
-	if (stderr.trim() && !stdout.trim()) {
-		throw new Error(stderr.trim());
-	}
-
-	return stdout.trim();
 }
 
 export async function accounts(journal: string): Promise<string[]> {
