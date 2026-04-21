@@ -9,6 +9,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import {
 	accounts,
 	balance,
+	commodities,
 	print,
 	aregister,
 	HledgerAmount,
@@ -198,19 +199,30 @@ export class JournalView extends TextFileView {
 			: [];
 
 		try {
-			// Fire accounts + transactions in parallel
+			// Fire transactions, accounts, and commodities in parallel.
+			// Accounts + commodities are refreshed on every render so the plugin
+			// cache stays in sync with journal edits; the form modal reads from
+			// that cache, so stale values would otherwise show up in dropdowns.
 			const txnQuery = this.selectedAccount
 				? aregister(this.data, this.selectedAccount, ...dateFilter)
 				: print(this.data, ...dateFilter);
-			const accountsQuery = cachedAccountList.length > 0
-				? Promise.resolve(cachedAccountList)
-				: accounts(this.data);
+			const accountsQuery = accounts(this.data);
+			const commoditiesQuery = commodities(this.data);
 
-			const [txnResult, accountList] = await Promise.all([txnQuery, accountsQuery]);
+			const [txnResult, accountList, commodityList] = await Promise.all([
+				txnQuery,
+				accountsQuery,
+				commoditiesQuery,
+			]);
 			if (thisRender !== this.renderVersion) return;
 
-			// Rebuild the page with fresh accounts if cache was empty
-			if (accountList !== cachedAccountList) {
+			this.plugin.cachedCommodities = commodityList;
+
+			// Rebuild the filter bar only if the account list actually changed
+			const accountsChanged =
+				accountList.length !== cachedAccountList.length ||
+				accountList.some((a, i) => a !== cachedAccountList[i]);
+			if (accountsChanged) {
 				this.plugin.cachedAccounts = accountList;
 				this.previewEl.empty();
 				this.buildFilterBar(this.previewEl, accountList);

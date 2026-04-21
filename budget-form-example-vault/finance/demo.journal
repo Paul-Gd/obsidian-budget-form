@@ -59,3 +59,7 @@ account equity:opening-balances
 2026-04-20 groceries  ; created:1709251200
     expenses:food            RON100
     assets:revolut
+
+2026-04-20 groceries  ; created:1709251200
+    assets:bank            RON-100
+    assets:revolut-eur     EUR20
