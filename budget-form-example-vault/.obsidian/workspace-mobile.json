@@ -1,0 +1,158 @@
+{
+  "main": {
+    "id": "ddcc2a7b4bc869fe",
+    "type": "split",
+    "children": [
+      {
+        "id": "f782c5bc5232e160",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0c146d5a244f55b9",
+            "type": "leaf",
+            "state": {
+              "type": "journal-view",
+              "state": {
+                "file": "finance/demo.journal"
+              },
+              "icon": "lucide-file",
+              "title": "demo"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2d25eb7f7495d19a",
+    "type": "mobile-drawer",
+    "children": [
+      {
+        "id": "2aef160d7d1214ad",
+        "type": "leaf",
+        "state": {
+          "type": "file-explorer",
+          "state": {
+            "sortOrder": "alphabetical",
+            "autoReveal": false
+          },
+          "icon": "lucide-folder-closed",
+          "title": "Files"
+        }
+      },
+      {
+        "id": "e04d81ed70e82bc9",
+        "type": "leaf",
+        "state": {
+          "type": "search",
+          "state": {
+            "query": "",
+            "matchingCase": false,
+            "explainSearch": false,
+            "collapseAll": false,
+            "extraContext": false,
+            "sortOrder": "alphabetical"
+          },
+          "icon": "lucide-search",
+          "title": "Search"
+        }
+      },
+      {
+        "id": "82cd3e53b88e6215",
+        "type": "leaf",
+        "state": {
+          "type": "tag",
+          "state": {
+            "sortOrder": "frequency",
+            "useHierarchy": true,
+            "showSearch": false,
+            "searchQuery": ""
+          },
+          "icon": "lucide-tags",
+          "title": "Tags"
+        }
+      },
+      {
+        "id": "7e1448444994b34a",
+        "type": "leaf",
+        "state": {
+          "type": "bookmarks",
+          "state": {},
+          "icon": "lucide-bookmark",
+          "title": "Bookmarks"
+        }
+      }
+    ],
+    "currentTab": 0
+  },
+  "right": {
+    "id": "0a03fd8f2447e631",
+    "type": "mobile-drawer",
+    "children": [
+      {
+        "id": "ea3aebb283de6ead",
+        "type": "leaf",
+        "state": {
+          "type": "backlink",
+          "state": {
+            "file": "finance/demo.journal",
+            "collapseAll": false,
+            "extraContext": false,
+            "sortOrder": "alphabetical",
+            "showSearch": false,
+            "searchQuery": "",
+            "backlinkCollapsed": false,
+            "unlinkedCollapsed": true
+          },
+          "icon": "links-coming-in",
+          "title": "Backlinks"
+        }
+      },
+      {
+        "id": "e0f9ecc9f0b379d3",
+        "type": "leaf",
+        "state": {
+          "type": "outgoing-link",
+          "state": {
+            "file": "finance/demo.journal",
+            "linksCollapsed": false,
+            "unlinkedCollapsed": true
+          },
+          "icon": "links-going-out",
+          "title": "Outgoing links"
+        }
+      },
+      {
+        "id": "9da3ee3af4694dc8",
+        "type": "leaf",
+        "state": {
+          "type": "outline",
+          "state": {
+            "file": "finance/demo.journal",
+            "followCursor": false,
+            "showSearch": false,
+            "searchQuery": ""
+          },
+          "icon": "lucide-list",
+          "title": "Outline"
+        }
+      }
+    ],
+    "currentTab": 0
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "obsidian-budget-form:Add a new budget entry": false
+    }
+  },
+  "active": "0c146d5a244f55b9",
+  "lastOpenFiles": []
+}
